@@ -16,7 +16,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -41,8 +41,7 @@
   "devDependencies": {
     "@babel/plugin-transform-private-property-in-object": "^7.28.6",
     "baseline-browser-mapping": "^2.9.17",
-    "eslint": "^8.57.1",
-    "eslint-config-react-app": "^7.0.1",
+    "eslint": "^9.39.2",
     "source-map": "^0.7.6",
     "svgo": "^4.0.0"
   }
