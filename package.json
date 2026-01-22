@@ -11,7 +11,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.5",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -41,7 +41,8 @@
   "devDependencies": {
     "@babel/plugin-transform-private-property-in-object": "^7.28.6",
     "baseline-browser-mapping": "^2.9.17",
-    "eslint": "^9.39.2",
+    "eslint": "^8.57.1",
+    "eslint-config-react-app": "^7.0.1",
     "source-map": "^0.7.6",
     "svgo": "^4.0.0"
   }
