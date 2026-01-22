@@ -1,0 +1,226 @@
+/* =========================
+   PAGE
+========================= */
+#exercise-page {
+  min-height: 100vh;
+  padding: 120px 20px 40px;
+  background: linear-gradient(135deg, #e0f7ff, #ccefff, #b3e5ff);
+  font-family: "Tajawal", sans-serif;
+  direction: rtl;
+  text-align: center;
+}
+
+/* =========================
+   HEADER
+========================= */
+.exercise-header {
+  margin-bottom: 40px;
+}
+
+.exercise-header h2 {
+  font-size: 2rem;
+  margin-top: 12px;
+  color: #0f172a;
+}
+
+.badge {
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0099ff, #33ccff);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* =========================
+   GRID
+========================= */
+.exercise-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 30px;
+  max-width: 1100px;
+  margin: auto;
+  align-items: start;
+}
+
+/* =========================
+   SIDE INFO
+========================= */
+.exercise-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.side-box {
+  padding: 22px;
+  border-radius: 18px;
+  color: white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.side-box.green {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.side-box.orange {
+  background: linear-gradient(135deg, #fb923c, #f97316);
+}
+
+.side-box p {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.side-box h3 {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+/* =========================
+   CARD
+========================= */
+.exercise-card {
+  background: rgba(255,255,255,0.95);
+  border-radius: 22px;
+  padding: 35px 30px;
+  box-shadow: 0 12px 30px rgba(0,153,255,0.25);
+}
+
+/* CENTER CARD */
+.exercise-card.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* =========================
+   SENTENCE
+========================= */
+.original-text {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 2;
+}
+
+/* =========================
+   ICONS
+========================= */
+.icons {
+  display: flex;
+  gap: 22px;
+  margin-bottom: 25px;
+}
+
+.icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: white;
+  transition: all 0.25s ease;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.icon:hover {
+  transform: scale(1.12);
+}
+
+.icon.play {
+  background: linear-gradient(135deg, #0099ff, #33ccff);
+}
+
+.icon.mic {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.icon.mute {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* =========================
+   FEEDBACK
+========================= */
+.feedback {
+  background: rgba(0,153,255,0.12);
+  padding: 18px 26px;
+  border-radius: 18px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* =========================
+   RESULT
+========================= */
+.exercise-card.result {
+  text-align: center;
+  animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================
+   CONFIRM BUTTON
+========================= */
+.confirm-btn {
+  margin-top: 45px;
+  padding: 16px 60px;
+  border-radius: 18px;
+  border: none;
+  background: linear-gradient(135deg, #0099ff, #33ccff);
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.confirm-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(0,153,255,0.45);
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 900px) {
+  .exercise-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exercise-side {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .original-text {
+    font-size: 1.7rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .icon {
+    width: 62px;
+    height: 62px;
+    font-size: 1.5rem;
+  }
+
+  .original-text {
+    font-size: 1.5rem;
+  }
+}

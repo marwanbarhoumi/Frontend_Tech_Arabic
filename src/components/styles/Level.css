@@ -1,0 +1,117 @@
+/* Page */
+#levels-page {
+  min-height: 100vh;
+  padding: 60px 30px 80px;
+  background: linear-gradient(180deg, #e0f2fe, #f8fafc);
+  font-family: "Tajawal", sans-serif;
+}
+
+/* Title */
+.title {
+  text-align: center;
+  color: #0284c7;
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 45px;
+  font-size: 1.05rem;
+}
+
+/* Grid */
+.levels-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .levels-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 550px) {
+  .levels-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card */
+.level-card {
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 32px 28px;
+  box-shadow: 0 15px 35px rgba(2, 132, 199, 0.15);
+  position: relative;
+  transition: all 0.35s ease;
+}
+
+.level-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 45px rgba(2, 132, 199, 0.25);
+}
+
+/* Badge */
+.badge {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  color: #0284c7;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Content */
+.level-card h2 {
+  text-align: center;
+  color: #0f172a;
+  margin-bottom: 8px;
+  font-size: 1.4rem;
+}
+
+.level-card p {
+  text-align: center;
+  color: #64748b;
+  margin-bottom: 22px;
+  font-size: 0.95rem;
+}
+
+/* Button */
+.level-card button {
+  width: 100%;
+  background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+  border: none;
+  color: white;
+  padding: 15px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.level-card button:hover {
+  box-shadow: 0 0 25px rgba(14, 165, 233, 0.6);
+  transform: scale(1.03);
+}
+.level-desc {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.6;
+  min-height: 40px;
+}
+/* Icon */
+.level-icon {
+  font-size: 2.2rem;
+  text-align: center;
+  margin: 10px 0 12px;
+}
+

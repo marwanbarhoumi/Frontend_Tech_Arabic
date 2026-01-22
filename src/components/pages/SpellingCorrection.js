@@ -1,0 +1,383 @@
+import React, { useState, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import "../styles/SpellingCorrection.css";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+
+const arabicKeys = [
+  ["ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "د"],
+  ["ش", "س", "ي", "ب", "ل", "ا", "ت", "ن", "م", "ك", "ط"],
+  ["ئ", "ء", "ؤ", "ر", "لا", "ى", "ة", "و", "ز", "ظ"]
+];
+
+const SpellingCorrection = () => {
+  const [text, setText] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [exerciseSentence, setExerciseSentence] = useState("");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showSentence, setShowSentence] = useState(true);
+  const [currentExerciseId, setCurrentExerciseId] = useState(null);
+  const [audioTime, setAudioTime] = useState(0); // وقت الصوت لتكميل Play / Resume
+  const [searchParams] = useSearchParams();
+  const level = Number(searchParams.get("level")) || 1;
+
+  const navigate = useNavigate();
+  const audioRef = useRef(null);
+  const hideSentenceTimeout = useRef(null); // مؤقت إخفاء الجملة
+
+  const generateSentence = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `http://localhost:5000/api/spelling/exercise/${level}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      const data = await res.json();
+      if (!data.success) return alert("❌ لا توجد جمل");
+
+      setExerciseSentence(data.exercise.correctSentence);
+      setCurrentExerciseId(data.exercise.id);
+      setText("");
+      setResult(null);
+      setShowSentence(true);
+      setAudioTime(0); // إعادة تعيين الوقت عند جملة جديدة
+    } catch (err) {
+      alert("❌ خطأ في جلب الجملة");
+    }
+  };
+
+  const hideSentenceAfterDelay = () => {
+    let delay = 10000;
+
+    if (level === 1 || level === 2) delay = 5000;
+    else if (level === 3) delay = 8000;
+    else if ([4, 5, 6].includes(level)) delay = 18000;
+
+    hideSentenceTimeout.current = setTimeout(() => {
+      setShowSentence(false);
+    }, delay);
+  };
+
+  const handleBrowserFallback = () => {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(exerciseSentence);
+      utterance.lang = "ar-SA";
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      utterance.onstart = () => hideSentenceAfterDelay();
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("❌ المتصفح لا يدعم خاصية القراءة الصوتية");
+      setIsSpeaking(false);
+    }
+  };
+
+  const speakSentence = async () => {
+    if (!exerciseSentence) {
+      alert("⚠️ لا توجد جملة للقراءة. اضغط على 'عرض جملة جديدة' أولاً");
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        "http://localhost:5000/api/spelling/generate-speech",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ text: exerciseSentence })
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success && data.audioUrl.startsWith("data:audio")) {
+        if (audioRef.current) audioRef.current.pause();
+        audioRef.current = new Audio(data.audioUrl);
+        audioRef.current.play().finally(() => setIsSpeaking(false));
+      } else {
+        handleBrowserFallback();
+      }
+
+      hideSentenceAfterDelay();
+    } catch (error) {
+      console.error("❌ خطأ:", error);
+      handleBrowserFallback();
+    }
+  };
+
+  const handleStop = () => {
+    setIsSpeaking(false);
+
+    if (audioRef.current) {
+      setAudioTime(audioRef.current.currentTime); // نخزن الوقت الحالي
+      audioRef.current.pause();
+    }
+
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    if (hideSentenceTimeout.current) {
+      clearTimeout(hideSentenceTimeout.current);
+      setShowSentence(true);
+    }
+  };
+
+  const handlePlayResume = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = audioTime; // نكمل من نفس البلاصة
+      audioRef.current.play().finally(() => setIsSpeaking(false));
+      setIsSpeaking(true);
+    } else {
+      speakSentence(); // إذا ما كانش الصوت موجود، نبدأ قراءة جديدة
+    }
+  };
+
+  const handleCorrect = async () => {
+    if (!exerciseSentence)
+      return alert("اضغط على 'عرض جملة جديدة' لبدء التمرين");
+    if (!text.trim()) return alert("⚠️ الرجاء كتابة الجملة أولاً");
+
+    if (text.trim() === exerciseSentence.trim()) {
+      setResult({
+        score: 100,
+        feedback: "ممتاز! 👏 الكتابة صحيحة تماماً",
+        originalText: text,
+        correctedText: exerciseSentence,
+        targetSentence: exerciseSentence,
+        mistakes: [],
+        isPerfect: true
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/spelling/correct",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ text: text, exerciseId: currentExerciseId })
+        }
+      );
+      const data = await response.json();
+
+      if (data.success) setResult({ ...data, mistakes: data.mistakes || [] });
+      else alert("❌ حدث خطأ في التصحيح: " + data.message);
+    } catch (error) {
+      console.error("Correction error:", error);
+      alert("❌ تعذر الاتصال بالخادم");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewText = () => {
+    setText("");
+    setResult(null);
+  };
+
+  const handleKeyClick = (key) => setText((prev) => prev + key);
+
+  return (
+    <div className="spelling-page">
+      <Navbar />
+      <div className="spelling-container">
+        <h1 className="spelling-title">✍️ تصحيح الإملاء الآلي</h1>
+        <button className="new-text-btn" onClick={generateSentence}>
+          🎯 عرض جملة جديدة
+        </button>
+
+        {exerciseSentence && (
+          <div className="exercise-box">
+            {showSentence ? (
+              <>
+                <p className="exercise-sentence">{exerciseSentence}</p>
+                <div className="timer-notice">
+                  ⏳ الجملة ستختفي بعد{" "}
+                  {level === 1 || level === 2 ? 5 : level === 3 ? 8 : 18} ثانية
+                </div>
+                <div className="speak-buttons">
+                  <button
+                    className="speak-btn"
+                    onClick={speakSentence}
+                    disabled={isSpeaking}
+                  >
+                    {isSpeaking ? "🔊 جاري القراءة..." : "استمع 🎧▶️"}
+                  </button>
+                  <button
+                    className={`stop-btn ${isSpeaking ? "active" : ""}`}
+                    onClick={handleStop}
+                  >
+                    ⏹️ إيقاف
+                  </button>
+                  <button
+                    className="play-resume-btn"
+                    onClick={handlePlayResume}
+                    disabled={isSpeaking}
+                  >
+                    ▶️ استكمال
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div>
+                <p className="exercise-sentence-hidden">
+                  🎧 لقد استمعت إلى الجملة، الآن اكتبها من الذاكرة
+                </p>
+                <div className="speak-buttons">
+                  <button
+                    className="speak-btn-secondary"
+                    onClick={() => setShowSentence(true)}
+                  >
+                    👁️ إظهار الجملة مرة أخرى
+                  </button>
+                  <button
+                    className="speak-btn"
+                    onClick={speakSentence}
+                    disabled={isSpeaking}
+                  >
+                    {isSpeaking
+                      ? "🔊 جاري إعادة القراءة..."
+                      : "🔊 أعد الاستماع إلى الجملة"}
+                  </button>
+                  <button
+                    className={`stop-btn ${isSpeaking ? "active" : ""}`}
+                    onClick={handleStop}
+                  >
+                    ⏹️ إيقاف
+                  </button>
+                  <button
+                    className="play-resume-btn"
+                    onClick={handlePlayResume}
+                    disabled={isSpeaking}
+                  >
+                    ▶️ استكمال
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="correction-section">
+          <label className="input-label">اكتب الجملة هنا:</label>
+          <textarea
+            className="text-input"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows="6"
+          />
+          <div className="buttons-row">
+            <button
+              className="correct-btn"
+              onClick={handleCorrect}
+              disabled={loading}
+            >
+              {loading ? "جاري التصحيح..." : "📝 صحح الإملاء"}
+            </button>
+            <button
+              className="keyboard-btn"
+              onClick={() => setShowKeyboard(!showKeyboard)}
+            >
+              ⌨️ لوحة المفاتيح
+            </button>
+          </div>
+          {showKeyboard && (
+            <div className="arabic-keyboard">
+              {arabicKeys.map((row, i) => (
+                <div key={i} className="keyboard-row">
+                  {row.map((key) => (
+                    <button
+                      key={key}
+                      className="key-btn"
+                      onClick={() => handleKeyClick(key)}
+                    >
+                      {key}
+                    </button>
+                  ))}
+                  {i === arabicKeys.length - 1 && (
+                    <button
+                      className="key-btn space-btn"
+                      onClick={() => handleKeyClick(" ")}
+                    >
+                      مسافة
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {result && (
+            <div className="result-section">
+              <div className="score-card">
+                <h3>نتيجة التصحيح</h3>
+                <div className="score-circle">
+                  <span className="score-value">{result.score}%</span>
+                </div>
+                <p className="feedback">{result.feedback}</p>
+              </div>
+
+              <div className="comparison">
+                <div className="text-box">
+                  <h4>📄 النص الأصلي:</h4>
+                  <div className="original-text">{result.originalText}</div>
+                </div>
+
+                <div className="text-box">
+                  <h4>✅ النص المصحح:</h4>
+                  <div className="corrected-text">{result.correctedText}</div>
+                </div>
+              </div>
+
+              {result?.mistakes?.length > 0 && (
+                <div className="mistakes-details">
+                  <h4>🔍 الأخطاء التي تم تصحيحها:</h4>
+                  <div className="mistakes-list">
+                    {result.mistakes.map((mistake, index) => (
+                      <div key={index} className="mistake-item">
+                        <span className="mistake-original">
+                          {mistake.original}
+                        </span>
+                        <span className="arrow">→</span>
+                        <span className="mistake-corrected">
+                          {mistake.corrected}
+                        </span>
+                        <span className="mistake-type">({mistake.type})</span>
+                        <div className="explanation">{mistake.explanation}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button className="new-text-btn" onClick={handleNewText}>
+                ✨ نص جديد
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default SpellingCorrection;
