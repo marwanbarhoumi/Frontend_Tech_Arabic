@@ -27,7 +27,7 @@ const SignIn = () => {
     setError("");
 
     try {
-      const response = await fetch("https://tech-arabic.onrender.com/api/auth/signin", {
+      const response = await fetch("https://backend-tech-arabic.onrender.com/auth/signin", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

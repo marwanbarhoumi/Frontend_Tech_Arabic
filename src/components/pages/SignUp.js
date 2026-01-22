@@ -43,7 +43,7 @@ const SignUp = () => {
 
     try {
       // Envoyer les données au backend
-      const response = await fetch('https://tech-arabic.onrender.com/api/auth/signup', {
+      const response = await fetch('https://backend-tech-arabic.onrender.com/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
