@@ -28,12 +28,10 @@ const SignIn = () => {
 
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/auth/signin`,
+        `${process.env.REACT_APP_API_URL}/api/auth/signin`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: formData.email,
             password: formData.password
