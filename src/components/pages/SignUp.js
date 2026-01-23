@@ -43,18 +43,22 @@ const SignUp = () => {
 
     try {
       // Envoyer les données au backend
-      const response = await fetch('https://backend-tech-arabic.onrender.com/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          email: formData.email,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword
-        })
-      });
+      const response = await fetch(
+  `${process.env.REACT_APP_API_URL}/api/auth/signup`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      fullName: formData.fullName,
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword
+    })
+  }
+);
+
 
       const data = await response.json();
 
