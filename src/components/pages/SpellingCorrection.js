@@ -30,7 +30,7 @@ const SpellingCorrection = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        `${process.env.ELEVENLABS_API_KEY}/api/spelling/exercise/${level}`,
+        `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -91,7 +91,7 @@ const SpellingCorrection = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `${process.env.ELEVENLABS_API_KEY}/api/spelling/generate-speech`,
+        `${process.env.REACT_APP_API_URL}/api/spelling/generate-speech`,
         {
           method: "POST",
           headers: {
@@ -169,7 +169,7 @@ const SpellingCorrection = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `${process.env.ELEVENLABS_API_KEY}/api/spelling/correct`,
+        `${process.env.REACT_APP_API_URL}/api/spelling/correct`,
         {
           method: "POST",
           headers: {
