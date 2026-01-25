@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import {  useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import "../styles/SpellingCorrection.css";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -23,7 +23,6 @@ const SpellingCorrection = () => {
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
 
-  
   const audioRef = useRef(null);
   const hideSentenceTimeout = useRef(null); // مؤقت إخفاء الجملة
 
@@ -31,14 +30,14 @@ const SpellingCorrection = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-  `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
-      
+        `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
       const data = await res.json();
       if (!data.success) return alert("❌ لا توجد جمل");
 
@@ -198,6 +197,7 @@ const SpellingCorrection = () => {
   };
 
   const handleKeyClick = (key) => setText((prev) => prev + key);
+  console.log("API:", process.env.REACT_APP_API_URL);
 
   return (
     <div className="spelling-page">
