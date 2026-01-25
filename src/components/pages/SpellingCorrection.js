@@ -198,7 +198,7 @@ const SpellingCorrection = () => {
 
   const handleKeyClick = (key) => setText((prev) => prev + key);
   console.log("API:", process.env.REACT_APP_API_URL);
-
+console.log("ELEVEN:", process.env.ELEVENLABS_API_KEY);
   return (
     <div className="spelling-page">
       <Navbar />
