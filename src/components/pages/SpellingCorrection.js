@@ -87,7 +87,7 @@ const SpellingCorrection = () => {
     setIsSpeaking(true);
     const token = localStorage.getItem("token");
 
-    const response = await fetch(`${API_URL}/api/spelling/generate-speech`, {
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/api/spelling/generate-speech`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -193,10 +193,10 @@ const SpellingCorrection = () => {
 
   const handleKeyClick = (key) => setText((prev) => prev + key);
   console.log("API:", process.env.REACT_APP_API_URL);
-console.log("ELEVEN:", process.env.ELEVENLABS_API_KEY);
 
-const API_URL = process.env.REACT_APP_API_URL;
-console.log("API_URL =", API_URL);
+
+
+
 
 
   return (
