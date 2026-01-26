@@ -80,41 +80,43 @@ const SpellingCorrection = () => {
     }
   };
 
-  const speakSentence = async () => {
-    if (!exerciseSentence) return alert("⚠️ لا توجد جملة للقراءة");
+ const speakSentence = async () => {
+  if (!exerciseSentence) return alert("⚠️ لا توجد جملة للقراءة");
 
-    try {
-      setIsSpeaking(true);
-      const token = localStorage.getItem("token");
+  try {
+    setIsSpeaking(true);
+    const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/spelling/generate-speech`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ text: exerciseSentence })
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success && data.audioUrl) {
-        if (audioRef.current) audioRef.current.pause();
-        audioRef.current = new Audio(data.audioUrl);
-        audioRef.current.play().finally(() => setIsSpeaking(false));
-      } else if (data.fallback) {
-        handleBrowserFallback(); // fallback دايمًا يشتغل
+    const response = await fetch(
+      `${process.env.REACT_APP_API_URL}/api/spelling/generate-speech`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: exerciseSentence }),
       }
+    );
 
-      hideSentenceAfterDelay();
-    } catch (error) {
-      console.error("❌ خطأ:", error);
-      handleBrowserFallback(); // fallback في حالة error
+    const data = await response.json();
+
+    if (data.success && data.audioUrl) {
+      if (audioRef.current) audioRef.current.pause();
+      audioRef.current = new Audio(data.audioUrl);
+      audioRef.current.play().finally(() => setIsSpeaking(false));
+    } else {
+      // fallback دايمًا يشتغل إذا ElevenLabs فشل
+      handleBrowserFallback();
     }
-  };
+
+    hideSentenceAfterDelay();
+  } catch (error) {
+    console.error("❌ Speech error:", error);
+    handleBrowserFallback(); // fallback في حالة أي error
+  }
+};
+
 
   const handleStop = () => {
     setIsSpeaking(false);
