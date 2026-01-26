@@ -81,43 +81,38 @@ const SpellingCorrection = () => {
   };
 
   const speakSentence = async () => {
-    if (!exerciseSentence) {
-      alert("⚠️ لا توجد جملة للقراءة. اضغط على 'عرض جملة جديدة' أولاً");
-      return;
+  if (!exerciseSentence) return alert("⚠️ لا توجد جملة للقراءة");
+
+  try {
+    setIsSpeaking(true);
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_URL}/api/spelling/generate-speech`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ text: exerciseSentence })
+    });
+
+    const data = await response.json();
+
+    if (data.success && data.audioUrl) {
+      if (audioRef.current) audioRef.current.pause();
+      audioRef.current = new Audio(data.audioUrl);
+      audioRef.current.play().finally(() => setIsSpeaking(false));
+    } else if (data.fallback) {
+      handleBrowserFallback(); // fallback دايمًا يشتغل
     }
 
-    try {
-      setIsSpeaking(true);
-      const token = localStorage.getItem("token");
+    hideSentenceAfterDelay();
+  } catch (error) {
+    console.error("❌ خطأ:", error);
+    handleBrowserFallback(); // fallback في حالة error
+  }
+};
 
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/spelling/generate-speech`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ text: exerciseSentence })
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success && data.audioUrl.startsWith("data:audio")) {
-        if (audioRef.current) audioRef.current.pause();
-        audioRef.current = new Audio(data.audioUrl);
-        audioRef.current.play().finally(() => setIsSpeaking(false));
-      } else {
-        handleBrowserFallback();
-      }
-
-      hideSentenceAfterDelay();
-    } catch (error) {
-      console.error("❌ خطأ:", error);
-      handleBrowserFallback();
-    }
-  };
 
   const handleStop = () => {
     setIsSpeaking(false);
@@ -197,7 +192,8 @@ const SpellingCorrection = () => {
   };
 
   const handleKeyClick = (key) => setText((prev) => prev + key);
-
+  console.log("API:", process.env.REACT_APP_API_URL);
+console.log("ELEVEN:", process.env.ELEVENLABS_API_KEY);
 
 const API_URL = process.env.REACT_APP_API_URL;
 console.log("API_URL =", API_URL);
