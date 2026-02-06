@@ -1,194 +1,170 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import "../styles/PronunciationExercise.css";
 
+const API = process.env.REACT_APP_API_URL;
+
 export default function PronunciationExercise() {
-  /* =======================
-     LEVEL
-  ======================= */
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
 
-  /* =======================
-     STATES
-  ======================= */
-  const [sentence, setSentence] = useState("");
+  const [exercise, setExercise] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
-  const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState(null);
 
-  const [seconds, setSeconds] = useState(0);
-  const timerRef = useRef(null);
+  const recorderRef = useRef(null);
+  const audioRef = useRef(null);
 
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
+  /* ==========================
+     GET EXERCISE
+  ========================== */
+  const generateExercise = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(
+      `${API}/api/pronunciation/exercise/${level}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    if (data.success) {
+      setExercise(data.exercise);
+      setAudioBlob(null);
+      setResult(null);
+    }
+  };
 
-  /* =======================
-     INIT SENTENCE (mock)
-  ======================= */
   useEffect(() => {
-    const sentencesByLevel = {
-      1: "أنا أحب بيتي.",
-      2: "أنا أحب بيتي لأنه مريح.",
-      3: "أنا أحب بيتي لأنه مريح ونظيف.",
-      4: "أنا أحب بيتي لأنه مريح ونظيف وفيه حديقة.",
-      5: "أنا أحب بيتي لأنه مريح ونظيف وفيه حديقة جميلة.",
-      6: "أنا أحب بيتي لأنه مريح ونظيف وفيه حديقة جميلة تطل على البحر."
-    };
-
-    setSentence(sentencesByLevel[level]);
+    generateExercise();
   }, [level]);
 
-  /* =======================
-     TIMER
-  ======================= */
-  const startTimer = () => {
-    if (timerRef.current) return;
-    timerRef.current = setInterval(() => {
-      setSeconds((s) => s + 1);
-    }, 1000);
+  /* ==========================
+     SPEAK (ElevenLabs)
+  ========================== */
+  const speakSentence = async () => {
+    if (!exercise) return;
+    setIsSpeaking(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API}/api/pronunciation/generate-speech`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ text: exercise.correctSentence })
+        }
+      );
+
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const audio = new Audio(URL.createObjectURL(blob));
+      audioRef.current = audio;
+      audio.onended = () => setIsSpeaking(false);
+      audio.play();
+    } catch {
+      setIsSpeaking(false);
+      alert("❌ تعذر تشغيل الصوت");
+    }
   };
 
-  const stopTimer = () => {
-    clearInterval(timerRef.current);
-    timerRef.current = null;
-  };
-
-  const formatTime = (s) => {
-    const m = String(Math.floor(s / 60)).padStart(2, "0");
-    const sec = String(s % 60).padStart(2, "0");
-    return `${m}:${sec}`;
-  };
-
-  /* =======================
-     LISTEN (TTS placeholder)
-  ======================= */
-  const handleListen = () => {
-    const utterance = new SpeechSynthesisUtterance(sentence);
-    utterance.lang = "ar-SA";
-    speechSynthesis.speak(utterance);
-  };
-
-  /* =======================
-     RECORD
-  ======================= */
-  const handleStartRecording = async () => {
+  /* ==========================
+     RECORD AUDIO
+  ========================== */
+  const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    const chunks = [];
 
-    mediaRecorderRef.current = new MediaRecorder(stream);
-    chunksRef.current = [];
-
-    mediaRecorderRef.current.ondataavailable = (e) => {
-      chunksRef.current.push(e.data);
-    };
-
-    mediaRecorderRef.current.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "audio/webm" });
       setAudioBlob(blob);
     };
 
-    mediaRecorderRef.current.start();
+    recorder.start();
+    recorderRef.current = recorder;
     setRecording(true);
-    startTimer();
   };
 
-  const handleStopRecording = () => {
-    mediaRecorderRef.current.stop();
+  const stopRecording = () => {
+    recorderRef.current.stop();
     setRecording(false);
   };
 
-  /* =======================
-     CONFIRM (mock result)
-  ======================= */
-  const handleConfirm = () => {
-    if (!audioBlob) {
-      alert("يرجى التسجيل أولاً 🎤");
-      return;
-    }
+  /* ==========================
+     SUBMIT PRONUNCIATION
+  ========================== */
+  const submitPronunciation = async () => {
+    if (!audioBlob) return alert("🎤 سجّل صوتك أولاً");
 
-    stopTimer();
+    const token = localStorage.getItem("token");
+    const form = new FormData();
+    form.append("audio", audioBlob);
+    form.append("exerciseId", exercise.id);
 
-    // MOCK RESULT (backend later)
-    setResult({
-      score: 78,
-      feedback: "أحسنت 👍 حاول تحسين نطق بعض الكلمات",
-      mistakes: 3
-    });
+    const res = await fetch(
+      `${API}/api/pronunciation/check`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      }
+    );
 
-    setShowResult(true);
+    const data = await res.json();
+    if (data.success) setResult(data);
   };
 
-  /* =======================
-     UI
-  ======================= */
   return (
-    <div id="exercise-page">
-      {/* Header */}
-      <div className="exercise-header">
-        <span className="badge">المستوى {level} : النطق</span>
-        <h2>استمع ثم تكلّم</h2>
-      </div>
+    <div className="pronunciation-page">
+      <h1>🎤 تمارين النطق</h1>
 
-<div className="exercise-grid">
-  {/* Side panel */}
-  <div className="exercise-side">
-    <div className="side-box green">
-      <p>الوقت المنقضي</p>
-      <h3>{formatTime(seconds)}</h3>
-    </div>
+      {exercise && (
+        <div className="card">
+          <p className="sentence">{exercise.correctSentence}</p>
 
-    <div className="side-box orange">
-      <p>عدد الأخطاء</p>
-      <h3>{result ? result.mistakes : "--"}</h3>
-    </div>
-  </div>
+          <div className="controls">
+            <button onClick={speakSentence} disabled={isSpeaking}>
+              {isSpeaking ? "🔊 جاري النطق..." : "▶️ استمع"}
+            </button>
 
-  {/* MAIN CARD */}
-  <div className="exercise-card main">
-    {/* Sentence */}
-    <p className="sentence-text">{sentence}</p>
+            {!recording ? (
+              <button onClick={startRecording}>🎤 سجّل</button>
+            ) : (
+              <button onClick={stopRecording}>⏹️ إيقاف</button>
+            )}
+          </div>
 
-    {/* Controls */}
-    <div className="icons">
-      <button className="icon play" onClick={handleListen}>
-        🔊
-      </button>
-
-      {!recording ? (
-        <button className="icon mic" onClick={handleStartRecording}>
-          🎤
-        </button>
-      ) : (
-        <button className="icon mute" onClick={handleStopRecording}>
-          ⏹
-        </button>
+          <button className="confirm-btn" onClick={submitPronunciation}>
+            ✅ تأكيد النطق
+          </button>
+        </div>
       )}
-    </div>
 
-    {/* Feedback */}
-    <div className="feedback">
-      {recording
-        ? "تحدث الآن..."
-        : audioBlob
-        ? "تم التسجيل ✅"
-        : "اضغط على الميكروفون"}
-    </div>
-  </div>
+      {result && (
+        <div className="result-card">
+          <h3>النتيجة</h3>
+          <strong>{result.score}%</strong>
+          <p>{result.feedback}</p>
 
-  {/* RESULT */}
-  {showResult && (
-    <div className="exercise-card result">
-      <h3>النتيجة</h3>
-      <p>{result.feedback}</p>
-      <strong>{result.score}%</strong>
-    </div>
-  )}
-</div>
+          {result.mistakes.length > 0 && (
+            <div className="mistakes">
+              <h4>🔍 ملاحظات:</h4>
+              {result.mistakes.map((m, i) => (
+                <div key={i}>
+                  <b>{m.word}</b> – {m.tip}
+                </div>
+              ))}
+            </div>
+          )}
 
-      <button className="confirm-btn" onClick={handleConfirm}>
-        تأكد
-      </button>
+          <button onClick={generateExercise}>🔁 تمرين جديد</button>
+        </div>
+      )}
     </div>
   );
 }
