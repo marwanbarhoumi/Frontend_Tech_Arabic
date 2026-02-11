@@ -1,4 +1,4 @@
-import React, {  useRef, useState, useCallback  } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import "../styles/PronunciationExercise.css";
 
@@ -21,29 +21,43 @@ export default function PronunciationExercise() {
      GET EXERCISE
   ========================== */
   const generateExercise = useCallback(async () => {
-  const token = localStorage.getItem("token");
-  const res = await fetch(
-    `${API}/api/pronunciation/exercise/${level}`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  const data = await res.json();
+    try {
+      const token = localStorage.getItem("token");
 
-  if (data.success) {
-    setExercise(data.exercise);
-    setAudioBlob(null);
-    setResult(null);
-  }
-}, [level]);
+      const res = await fetch(
+        `${API}/api/pronunciation/exercise/${level}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setExercise(data.exercise);
+        setAudioBlob(null);
+        setResult(null);
+      }
+    } catch (err) {
+      console.error("Exercise error:", err);
+    }
+  }, [level]);
+
+  useEffect(() => {
+    generateExercise();
+  }, [generateExercise]);
 
   /* ==========================
      SPEAK (ElevenLabs)
   ========================== */
   const speakSentence = async () => {
     if (!exercise) return;
+
     setIsSpeaking(true);
 
     try {
       const token = localStorage.getItem("token");
+
       const res = await fetch(
         `${API}/api/pronunciation/generate-speech`,
         {
@@ -52,19 +66,24 @@ export default function PronunciationExercise() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ text: exercise.correctSentence })
+          body: JSON.stringify({
+            text: exercise.correctSentence
+          })
         }
       );
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Speech error");
+
       const blob = await res.blob();
       const audio = new Audio(URL.createObjectURL(blob));
       audioRef.current = audio;
+
       audio.onended = () => setIsSpeaking(false);
       audio.play();
-    } catch {
-      setIsSpeaking(false);
+    } catch (err) {
+      console.error("Speech error:", err);
       alert("❌ تعذر تشغيل الصوت");
+      setIsSpeaking(false);
     }
   };
 
@@ -72,50 +91,78 @@ export default function PronunciationExercise() {
      RECORD AUDIO
   ========================== */
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-    const chunks = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      setAudioBlob(blob);
-    };
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
 
-    recorder.start();
-    recorderRef.current = recorder;
-    setRecording(true);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setAudioBlob(blob);
+      };
+
+      recorder.start();
+      recorderRef.current = recorder;
+      setRecording(true);
+    } catch (err) {
+      console.error("Recording error:", err);
+      alert("❌ لا يمكن تشغيل الميكروفون");
+    }
   };
 
   const stopRecording = () => {
-    recorderRef.current.stop();
-    setRecording(false);
+    if (recorderRef.current) {
+      recorderRef.current.stop();
+      setRecording(false);
+    }
   };
 
   /* ==========================
      SUBMIT PRONUNCIATION
   ========================== */
   const submitPronunciation = async () => {
-    if (!audioBlob) return alert("🎤 سجّل صوتك أولاً");
+    if (!audioBlob) {
+      alert("🎤 سجّل صوتك أولاً");
+      return;
+    }
 
-    const token = localStorage.getItem("token");
-    const form = new FormData();
-    form.append("audio", audioBlob);
-    form.append("exerciseId", exercise.id);
+    try {
+      const token = localStorage.getItem("token");
 
-    const res = await fetch(
-      `${API}/api/pronunciation/check`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form
+      const form = new FormData();
+      form.append("audio", audioBlob);
+      form.append("exerciseId", exercise.id);
+
+      const res = await fetch(
+        `${API}/api/pronunciation/check`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          body: form
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setResult(data);
       }
-    );
-
-    const data = await res.json();
-    if (data.success) setResult(data);
+    } catch (err) {
+      console.error("Pronunciation error:", err);
+      alert("❌ حدث خطأ أثناء إرسال التسجيل");
+    }
   };
 
+  /* ==========================
+     UI
+  ========================== */
   return (
     <div className="pronunciation-page">
       <h1>🎤 تمارين النطق</h1>
@@ -136,7 +183,10 @@ export default function PronunciationExercise() {
             )}
           </div>
 
-          <button className="confirm-btn" onClick={submitPronunciation}>
+          <button
+            className="confirm-btn"
+            onClick={submitPronunciation}
+          >
             ✅ تأكيد النطق
           </button>
         </div>
@@ -148,7 +198,7 @@ export default function PronunciationExercise() {
           <strong>{result.score}%</strong>
           <p>{result.feedback}</p>
 
-          {result.mistakes.length > 0 && (
+          {result.mistakes?.length > 0 && (
             <div className="mistakes">
               <h4>🔍 ملاحظات:</h4>
               {result.mistakes.map((m, i) => (
@@ -159,7 +209,9 @@ export default function PronunciationExercise() {
             </div>
           )}
 
-          <button onClick={generateExercise}>🔁 تمرين جديد</button>
+          <button onClick={generateExercise}>
+            🔁 تمرين جديد
+          </button>
         </div>
       )}
     </div>
