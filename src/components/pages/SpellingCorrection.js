@@ -150,6 +150,7 @@ const browserFallback = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
+      console.log(`${process.env.REACT_APP_API_URL}/api/spelling/correct`);
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}/api/spelling/correct`,
         {
