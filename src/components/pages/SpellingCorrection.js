@@ -18,7 +18,7 @@ const SpellingCorrection = () => {
   const [exerciseSentence, setExerciseSentence] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSentence, setShowSentence] = useState(true);
-  const [currentExerciseId] = useState(null);
+  const [currentExerciseId, setCurrentExerciseId] = useState(null);
   const [audioTime, setAudioTime] = useState(0); // وقت الصوت لتكميل Play / Resume
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
@@ -35,6 +35,8 @@ const SpellingCorrection = () => {
     const data = await res.json();
     if (data.success) {
       setExerciseSentence(data.exercise.correctSentence);
+      setCurrentExerciseId(data.exercise.id); // ⭐ هذا هو المفتاح
+
       setText("");
       setShowSentence(true);
     }
@@ -148,7 +150,10 @@ const SpellingCorrection = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      console.log("TOKEN =", token);
+      if (!currentExerciseId) {
+        return alert("⚠️ لم يتم تحميل التمرين بعد");
+      }
+
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}/api/spelling/correct`,
         {
