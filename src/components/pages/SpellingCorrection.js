@@ -158,7 +158,7 @@ const browserFallback = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ text: text , exerciseId: currentExerciseId })
+          body: JSON.stringify({ text: text, exerciseId: currentExerciseId })
         }
       );
       const data = await response.json();
