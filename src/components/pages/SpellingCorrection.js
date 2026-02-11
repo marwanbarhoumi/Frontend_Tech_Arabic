@@ -127,7 +127,6 @@ const browserFallback = () => {
     setIsSpeaking(true);
   }
 };
-console.log("API URL:", process.env.REACT_APP_API_URL);
 
 
   const handleCorrect = async () => {
@@ -152,7 +151,7 @@ console.log("API URL:", process.env.REACT_APP_API_URL);
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/spelling/correction`,
+        `${process.env.REACT_APP_API_URL}/api/spelling/correct`,
         {
           method: "POST",
           headers: {
