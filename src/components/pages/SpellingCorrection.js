@@ -137,7 +137,7 @@ const browserFallback = () => {
     if (text.trim() === exerciseSentence.trim()) {
       setResult({
         score: 100,
-        feedback: "ممتاز! 👏 الكتابة صحيحة تماماً",
+        feedback: "ممتاز!  👏 الكتابة صحيحة تماماً",
         originalText: text,
         correctedText: exerciseSentence,
         targetSentence: exerciseSentence,
