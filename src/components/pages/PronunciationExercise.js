@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback  } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import "../styles/PronunciationExercise.css";
+import "../styles/SpellingCorrection.css";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 const API = process.env.REACT_APP_API_URL;
 
-export default function PronunciationExercise() {
+const PronunciationExercise = () => {
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
 
@@ -13,39 +15,47 @@ export default function PronunciationExercise() {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const recorderRef = useRef(null);
   const audioRef = useRef(null);
 
-  /* ==========================
+  /* ==============================
      GET EXERCISE
-  ========================== */
- const generateExercise = useCallback(async () => {
-  const token = localStorage.getItem("token");
-  const res = await fetch(
-    `${API}/api/pronunciation/exercise/${level}`,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  const data = await res.json();
-  if (data.success) {
-    setExercise(data.exercise);
-    setAudioBlob(null);
-    setResult(null);
-  }
-}, [level]);
-useEffect(() => {
-  generateExercise();
-}, [generateExercise]);
+  ============================== */
+  const generateExercise = async () => {
+    const token = localStorage.getItem("token");
 
-  /* ==========================
-     SPEAK (ElevenLabs)
-  ========================== */
+    const res = await fetch(
+      `${API}/api/pronunciation/exercise/${level}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      setExercise(data.exercise);
+      setResult(null);
+      setAudioBlob(null);
+    }
+  };
+
+  useEffect(() => {
+    generateExercise();
+    // eslint-disable-next-line
+  }, [level]);
+
+  /* ==============================
+     SPEAK
+  ============================== */
   const speakSentence = async () => {
     if (!exercise) return;
+
     setIsSpeaking(true);
 
     try {
       const token = localStorage.getItem("token");
+
       const res = await fetch(
         `${API}/api/pronunciation/generate-speech`,
         {
@@ -58,7 +68,6 @@ useEffect(() => {
         }
       );
 
-      if (!res.ok) throw new Error();
       const blob = await res.blob();
       const audio = new Audio(URL.createObjectURL(blob));
       audioRef.current = audio;
@@ -70,15 +79,17 @@ useEffect(() => {
     }
   };
 
-  /* ==========================
-     RECORD AUDIO
-  ========================== */
+  /* ==============================
+     RECORD
+  ============================== */
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
     const chunks = [];
 
-    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.ondataavailable = (e) => chunks.push(e.data);
+
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: "audio/webm" });
       setAudioBlob(blob);
@@ -94,76 +105,119 @@ useEffect(() => {
     setRecording(false);
   };
 
-  /* ==========================
-     SUBMIT PRONUNCIATION
-  ========================== */
+  /* ==============================
+     SUBMIT
+  ============================== */
   const submitPronunciation = async () => {
     if (!audioBlob) return alert("🎤 سجّل صوتك أولاً");
+
+    setLoading(true);
 
     const token = localStorage.getItem("token");
     const form = new FormData();
     form.append("audio", audioBlob);
     form.append("exerciseId", exercise.id);
 
-    const res = await fetch(
-      `${API}/api/pronunciation/check`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form
-      }
-    );
+    const res = await fetch(`${API}/api/pronunciation/check`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form
+    });
 
     const data = await res.json();
+
     if (data.success) setResult(data);
+
+    setLoading(false);
   };
 
   return (
-    <div className="pronunciation-page">
-      <h1>🎤 تمارين النطق</h1>
+    <div className="spelling-page">
+      <Navbar />
 
-      {exercise && (
-        <div className="card">
-          <p className="sentence">{exercise.correctSentence}</p>
+      <div className="spelling-container">
+        <h1 className="spelling-title">🎤 تمارين النطق</h1>
 
-          <div className="controls">
-            <button onClick={speakSentence} disabled={isSpeaking}>
-              {isSpeaking ? "🔊 جاري النطق..." : "▶️ استمع"}
-            </button>
+        <button className="new-text-btn" onClick={generateExercise}>
+          🔁 تمرين جديد
+        </button>
 
-            {!recording ? (
-              <button onClick={startRecording}>🎤 سجّل</button>
-            ) : (
-              <button onClick={stopRecording}>⏹️ إيقاف</button>
-            )}
-          </div>
+        {exercise && (
+          <div className="correction-section">
 
-          <button className="confirm-btn" onClick={submitPronunciation}>
-            ✅ تأكيد النطق
-          </button>
-        </div>
-      )}
-
-      {result && (
-        <div className="result-card">
-          <h3>النتيجة</h3>
-          <strong>{result.score}%</strong>
-          <p>{result.feedback}</p>
-
-          {result.mistakes.length > 0 && (
-            <div className="mistakes">
-              <h4>🔍 ملاحظات:</h4>
-              {result.mistakes.map((m, i) => (
-                <div key={i}>
-                  <b>{m.word}</b> – {m.tip}
-                </div>
-              ))}
+            <div className="exercise-box">
+              <p className="exercise-sentence">
+                {exercise.correctSentence}
+              </p>
             </div>
-          )}
 
-          <button onClick={generateExercise}>🔁 تمرين جديد</button>
-        </div>
-      )}
+            <div className="speak-buttons">
+              <button
+                className="speak-btn"
+                onClick={speakSentence}
+                disabled={isSpeaking}
+              >
+                {isSpeaking ? "🔊 جاري النطق..." : "▶️ استمع"}
+              </button>
+
+              {!recording ? (
+                <button className="correct-btn" onClick={startRecording}>
+                  🎤 سجّل
+                </button>
+              ) : (
+                <button className="stop-btn" onClick={stopRecording}>
+                  ⏹️ إيقاف التسجيل
+                </button>
+              )}
+            </div>
+
+            <div style={{ textAlign: "center", marginTop: "20px" }}>
+              <button
+                className="correct-btn"
+                onClick={submitPronunciation}
+                disabled={loading}
+              >
+                {loading ? "جاري التصحيح..." : "✅ تأكيد النطق"}
+              </button>
+            </div>
+
+          </div>
+        )}
+
+        {result && (
+          <div className="result-section">
+
+            <div className="score-card">
+              <h3>نتيجة النطق</h3>
+
+              <div className="score-circle">
+                <span className="score-value">{result.score}%</span>
+              </div>
+
+              <p className="feedback">{result.feedback}</p>
+            </div>
+
+            {result.mistakes?.length > 0 && (
+              <div className="mistakes-details">
+                <h4>🔍 ملاحظات:</h4>
+
+                {result.mistakes.map((m, i) => (
+                  <div key={i} className="mistake-item">
+                    <span className="mistake-original">{m.word}</span>
+                    <span className="arrow">→</span>
+                    <span className="mistake-corrected">{m.tip}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+        )}
+      </div>
+
+      <Footer />
     </div>
   );
-}
+};
+
+export default PronunciationExercise;
