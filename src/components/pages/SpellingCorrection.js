@@ -148,7 +148,7 @@ const SpellingCorrection = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      console.log(`${process.env.REACT_APP_API_URL}/api/spelling/correct`);
+      console.log("TOKEN =", token);
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}/api/spelling/correct`,
         {
