@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {  useRef, useState, useCallback  } from "react";
 import { useSearchParams } from "react-router-dom";
 import "../styles/PronunciationExercise.css";
 
@@ -20,23 +20,20 @@ export default function PronunciationExercise() {
   /* ==========================
      GET EXERCISE
   ========================== */
-  const generateExercise = async () => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(
-      `${API}/api/pronunciation/exercise/${level}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const data = await res.json();
-    if (data.success) {
-      setExercise(data.exercise);
-      setAudioBlob(null);
-      setResult(null);
-    }
-  };
+  const generateExercise = useCallback(async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(
+    `${API}/api/pronunciation/exercise/${level}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await res.json();
 
-  useEffect(() => {
-    generateExercise();
-  }, [level]);
+  if (data.success) {
+    setExercise(data.exercise);
+    setAudioBlob(null);
+    setResult(null);
+  }
+}, [level]);
 
   /* ==========================
      SPEAK (ElevenLabs)
