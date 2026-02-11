@@ -26,7 +26,7 @@ const SpellingCorrection = () => {
   const audioRef = useRef(null);
   const hideSentenceTimeout = useRef(null); // مؤقت إخفاء الجملة
 
- const generateSentence = async () => {
+  const generateSentence = async () => {
     const token = localStorage.getItem("token");
     const res = await fetch(
       `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
@@ -52,8 +52,7 @@ const SpellingCorrection = () => {
     }, delay);
   };
 
- 
-const browserFallback = () => {
+  const browserFallback = () => {
     if (!("speechSynthesis" in window)) return;
 
     const utter = new SpeechSynthesisUtterance(exerciseSentence);
@@ -66,7 +65,7 @@ const browserFallback = () => {
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utter);
   };
- const speakSentence = async () => {
+  const speakSentence = async () => {
     if (!exerciseSentence) return;
 
     setIsSpeaking(true);
@@ -96,40 +95,39 @@ const browserFallback = () => {
       audioRef.current.onended = () => setIsSpeaking(false);
       audioRef.current.play();
       hideSentenceAfterDelay();
-
     } catch {
       browserFallback();
     }
   };
 
+  const handleStop = () => {
+    setIsSpeaking(false);
 
- const handleStop = () => {
-  setIsSpeaking(false);
+    if (audioRef.current) {
+      setAudioTime(audioRef.current.currentTime);
+      audioRef.current.pause();
+    }
 
-  if (audioRef.current) {
-    setAudioTime(audioRef.current.currentTime);
-    audioRef.current.pause();
-  }
+    window.speechSynthesis?.cancel();
 
-  window.speechSynthesis?.cancel();
+    if (hideSentenceTimeout.current) {
+      clearTimeout(hideSentenceTimeout.current);
+      setShowSentence(true);
+    }
+  };
 
-  if (hideSentenceTimeout.current) {
-    clearTimeout(hideSentenceTimeout.current);
-    setShowSentence(true);
-  }
-};
-
-
- const handlePlayResume = () => {
-  if (audioRef.current) {
-    audioRef.current.currentTime = audioTime;
-    audioRef.current.play();
-    setIsSpeaking(true);
-  }
-};
-
+  const handlePlayResume = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = audioTime;
+      audioRef.current.play();
+      setIsSpeaking(true);
+    }
+  };
 
   const handleCorrect = async () => {
+    console.log("API URL =", process.env.REACT_APP_API_URL);
+    console.log("TEXT =", text);
+    console.log("EXERCISE ID =", currentExerciseId);
     if (!exerciseSentence)
       return alert("اضغط على 'عرض جملة جديدة' لبدء التمرين");
     if (!text.trim()) return alert("⚠️ الرجاء كتابة الجملة أولاً");
