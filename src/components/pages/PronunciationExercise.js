@@ -16,6 +16,8 @@ const PronunciationExercise = () => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+    const [exerciseSentence, setExerciseSentence] = useState("");
+  
 
   const recorderRef = useRef(null);
   const audioRef = useRef(null);
@@ -48,34 +50,78 @@ const PronunciationExercise = () => {
   /* ==============================
      SPEAK
   ============================== */
-  const speakSentence = async () => {
-    if (!exercise) return;
+   const generateSentence = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(
+      `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    if (data.success) {
+      setExerciseSentence(data.exercise.correctSentence);
+      setCurrentExerciseId(data.exercise.id); // ⭐ هذا هو المفتاح
+
+      setText("");
+      setShowSentence(true);
+    }
+  };
+   const hideSentenceAfterDelay = () => {
+    let delay = 10000;
+
+    if (level === 1 || level === 2) delay = 5000;
+    else if (level === 3) delay = 8000;
+    else if ([4, 5, 6].includes(level)) delay = 18000;
+
+    hideSentenceTimeout.current = setTimeout(() => {
+      setShowSentence(false);
+    }, delay);
+  };
+
+   const browserFallback = () => {
+    if (!("speechSynthesis" in window)) return;
+
+    const utter = new SpeechSynthesisUtterance(exerciseSentence);
+    utter.lang = "ar-SA";
+    utter.rate = 0.85;
+
+    utter.onstart = hideSentenceAfterDelay;
+    utter.onend = () => setIsSpeaking(false);
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  }
+   const speakSentence = async () => {
+    if (!exerciseSentence) return;
 
     setIsSpeaking(true);
-
     try {
       const token = localStorage.getItem("token");
-
       const res = await fetch(
-        `${API}/api/pronunciation/generate-speech`,
+        `${process.env.REACT_APP_API_URL}/api/spelling/generate-speech`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ text: exercise.correctSentence })
+          body: JSON.stringify({ text: exerciseSentence })
         }
       );
 
+      if (!res.ok) {
+        browserFallback();
+        return;
+      }
+
       const blob = await res.blob();
-      const audio = new Audio(URL.createObjectURL(blob));
-      audioRef.current = audio;
-      audio.onended = () => setIsSpeaking(false);
-      audio.play();
+      const url = URL.createObjectURL(blob);
+
+      audioRef.current = new Audio(url);
+      audioRef.current.onended = () => setIsSpeaking(false);
+      audioRef.current.play();
+      hideSentenceAfterDelay();
     } catch {
-      setIsSpeaking(false);
-      alert("❌ تعذر تشغيل الصوت");
+      browserFallback();
     }
   };
 
