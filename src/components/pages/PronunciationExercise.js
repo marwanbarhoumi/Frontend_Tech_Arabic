@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import "../styles/SpellingCorrection.css";
 import Navbar from "./Navbar";
@@ -10,16 +10,12 @@ const PronunciationExercise = () => {
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
 
-  const [exercise] = useState(null);
+  const [exercise, setExercise] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [setExerciseSentence] = useState("");
-  const [setText] = useState("");
-  const [setCurrentExerciseId] = useState(null);
-  const [setShowSentence] = useState(true);
 
   const recorderRef = useRef(null);
   const audioRef = useRef(null);
@@ -27,28 +23,42 @@ const PronunciationExercise = () => {
   /* ==============================
      GET EXERCISE
   ============================== */
-
   const generateSentence = async () => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(
-      `${process.env.REACT_APP_API_URL}/api/pronunciation/exercise/${level}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const data = await res.json();
-    if (data.success) {
-      setExerciseSentence(data.exercise.correctSentence);
-      setCurrentExerciseId(data.exercise.id); // ⭐ هذا هو المفتاح
+    try {
+      const token = localStorage.getItem("token");
 
-      setText("");
-      setShowSentence(true);
+      const res = await fetch(`${API}/api/pronunciation/exercise/${level}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("Exercise error:", res.status, txt);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data.success && data.exercise) {
+        setExercise(data.exercise);
+        setResult(null);
+        setAudioBlob(null);
+      }
+    } catch (err) {
+      console.error("Generate exercise error:", err);
     }
   };
 
+  useEffect(() => {
+    generateSentence();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level]);
+
   /* ==============================
-     SPEAK
+     SPEAK (TTS)
   ============================== */
   const speakSentence = async () => {
-    if (!exercise) return;
+    if (!exercise?.correctSentence) return;
 
     setIsSpeaking(true);
 
@@ -59,22 +69,35 @@ const PronunciationExercise = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ text: exercise.correctSentence })
+        body: JSON.stringify({ text: exercise.correctSentence }),
       });
 
-      if (!res.ok) throw new Error("TTS failed");
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`TTS failed: ${res.status} - ${txt}`);
+      }
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
 
-      audioRef.current = new Audio(url);
-      audioRef.current.onended = () => setIsSpeaking(false);
-      audioRef.current.play();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
+
+      await audio.play();
     } catch (err) {
       console.error(err);
       setIsSpeaking(false);
+      alert("❌ تعذر تشغيل الصوت (TTS)");
     }
   };
 
@@ -82,33 +105,44 @@ const PronunciationExercise = () => {
      RECORD
   ============================== */
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
 
-    const chunks = [];
+      const chunks = [];
 
-    recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => chunks.push(e.data);
 
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      setAudioBlob(blob);
-    };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setAudioBlob(blob);
 
-    recorder.start();
-    recorderRef.current = recorder;
-    setRecording(true);
+        // stop mic tracks
+        stream.getTracks().forEach((t) => t.stop());
+      };
+
+      recorder.start();
+      recorderRef.current = recorder;
+      setRecording(true);
+    } catch (err) {
+      console.error("Recording error:", err);
+      alert("❌ لم نتمكن من تشغيل الميكروفون");
+    }
   };
 
   const stopRecording = () => {
-    recorderRef.current.stop();
+    if (recorderRef.current && recorderRef.current.state !== "inactive") {
+      recorderRef.current.stop();
+    }
     setRecording(false);
   };
 
   /* ==============================
-     SUBMIT
+     SUBMIT (STT + SCORE)
   ============================== */
   const submitPronunciation = async () => {
     if (!audioBlob) return alert("🎤 سجّل صوتك أولاً");
+    if (!exercise?.id) return alert("⚠️ ما ثماش تمرين");
 
     setLoading(true);
 
@@ -117,21 +151,32 @@ const PronunciationExercise = () => {
 
       const form = new FormData();
       form.append("audio", audioBlob);
-      form.append("originalText", exercise.correctSentence);
+      form.append("exerciseId", String(exercise.id));
 
       const res = await fetch(`${API}/api/pronunciation/check`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
-        body: form
+        body: form,
       });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error("Check error:", res.status, txt);
+        alert("❌ فشل التقييم (Check)");
+        setLoading(false);
+        return;
+      }
 
       const data = await res.json();
 
-      if (data.score !== undefined) {
+      if (data.success) {
         setResult(data);
+      } else {
+        alert("❌ لم يتم التقييم");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Submit error:", err);
+      alert("❌ تعذر الاتصال بالخادم");
     }
 
     setLoading(false);
@@ -143,6 +188,7 @@ const PronunciationExercise = () => {
 
       <div className="spelling-container">
         <h1 className="spelling-title">🎤 تمارين النطق</h1>
+
         <button className="new-text-btn" onClick={generateSentence}>
           🎯 عرض جملة جديدة
         </button>
@@ -179,7 +225,7 @@ const PronunciationExercise = () => {
                 onClick={submitPronunciation}
                 disabled={loading}
               >
-                {loading ? "جاري التصحيح..." : "✅ تأكيد النطق"}
+                {loading ? "جاري التقييم..." : "✅ تأكيد النطق"}
               </button>
             </div>
           </div>
@@ -193,6 +239,12 @@ const PronunciationExercise = () => {
               <div className="score-circle">
                 <span className="score-value">{result.score}%</span>
               </div>
+
+              {result.recognizedText && (
+                <p className="feedback">
+                  📝 النص اللي فهمتو النظام: {result.recognizedText}
+                </p>
+              )}
             </div>
           </div>
         )}
