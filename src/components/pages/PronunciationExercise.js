@@ -28,7 +28,7 @@ const PronunciationExercise = () => {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `${API}/api/pronunciation/exercise?level=${level}`,
+        `${API}/api/pronunciation/exercise/${level}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
