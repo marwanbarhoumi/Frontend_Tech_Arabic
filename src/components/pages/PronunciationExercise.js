@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import "../styles/SpellingCorrection.css";
 import Navbar from "./Navbar";
@@ -10,12 +10,16 @@ const PronunciationExercise = () => {
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
 
-  const [exercise, setExercise] = useState(null);
+  const [exercise] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [setExerciseSentence] = useState("");
+  const [setText] = useState("");
+  const [setCurrentExerciseId] = useState(null);
+  const [setShowSentence] = useState(true);
 
   const recorderRef = useRef(null);
   const audioRef = useRef(null);
@@ -23,31 +27,22 @@ const PronunciationExercise = () => {
   /* ==============================
      GET EXERCISE
   ============================== */
-  const generateExercise = async () => {
-    try {
-      const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        `${API}/api/pronunciation/exercise/${level}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  const generateSentence = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(
+      `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    if (data.success) {
+      setExerciseSentence(data.exercise.correctSentence);
+      setCurrentExerciseId(data.exercise.id); // ⭐ هذا هو المفتاح
 
-      const data = await res.json();
-
-      if (data.sentence) {
-        setExercise({ correctSentence: data.exercise });
-        setResult(null);
-        setAudioBlob(null);
-      }
-    } catch (err) {
-      console.error(err);
+      setText("");
+      setShowSentence(true);
     }
   };
-
-  useEffect(() => {
-    generateExercise();
-    // eslint-disable-next-line
-  }, [level]);
 
   /* ==============================
      SPEAK
@@ -60,17 +55,14 @@ const PronunciationExercise = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        `${API}/api/pronunciation/generate-speech`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ text: exercise.correctSentence }),
-        }
-      );
+      const res = await fetch(`${API}/api/pronunciation/generate-speech`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ text: exercise.correctSentence })
+      });
 
       if (!res.ok) throw new Error("TTS failed");
 
@@ -130,7 +122,7 @@ const PronunciationExercise = () => {
       const res = await fetch(`${API}/api/pronunciation/check`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
-        body: form,
+        body: form
       });
 
       const data = await res.json();
@@ -152,16 +144,14 @@ const PronunciationExercise = () => {
       <div className="spelling-container">
         <h1 className="spelling-title">🎤 تمارين النطق</h1>
 
-        <button className="new-text-btn" onClick={generateExercise}>
+        <button className="new-text-btn" onClick={generateSentence}>
           🔁 تمرين جديد
         </button>
 
         {exercise && (
           <div className="correction-section">
             <div className="exercise-box">
-              <p className="exercise-sentence">
-                {exercise.correctSentence}
-              </p>
+              <p className="exercise-sentence">{exercise.correctSentence}</p>
             </div>
 
             <div className="speak-buttons">

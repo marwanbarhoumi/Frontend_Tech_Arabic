@@ -26,7 +26,7 @@ const SpellingCorrection = () => {
   const audioRef = useRef(null);
   const hideSentenceTimeout = useRef(null); // مؤقت إخفاء الجملة
 
-  const generateSentence = async () => {
+ const generateSentence = async () => {
     const token = localStorage.getItem("token");
     const res = await fetch(
       `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
@@ -41,7 +41,7 @@ const SpellingCorrection = () => {
       setShowSentence(true);
     }
   };
-
+ 
   const hideSentenceAfterDelay = () => {
     let delay = 10000;
 
