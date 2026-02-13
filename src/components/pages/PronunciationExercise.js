@@ -9,13 +9,15 @@ const API = process.env.REACT_APP_API_URL;
 const PronunciationExercise = () => {
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
-
+  const [exerciseSentence, setExerciseSentence] = useState("");
+  const hideSentenceTimeout = useRef(null);
   const [exercise, setExercise] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showSentence, setShowSentence] = useState(true);
 
   const recorderRef = useRef(null);
   const audioRef = useRef(null);
@@ -28,7 +30,7 @@ const PronunciationExercise = () => {
       const token = localStorage.getItem("token");
 
       const res = await fetch(`${API}/api/pronunciation/exercise/${level}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!res.ok) {
@@ -40,9 +42,11 @@ const PronunciationExercise = () => {
       const data = await res.json();
 
       if (data.success && data.exercise) {
+        setExerciseSentence(data.exercise.correctSentence);
         setExercise(data.exercise);
         setResult(null);
         setAudioBlob(null);
+        setShowSentence(true);
       }
     } catch (err) {
       console.error("Generate exercise error:", err);
@@ -57,47 +61,64 @@ const PronunciationExercise = () => {
   /* ==============================
      SPEAK (TTS)
   ============================== */
+
+  const hideSentenceAfterDelay = () => {
+    let delay = 10000;
+
+    if (level === 1 || level === 2) delay = 5000;
+    else if (level === 3) delay = 8000;
+    else if ([4, 5, 6].includes(level)) delay = 18000;
+
+    hideSentenceTimeout.current = setTimeout(() => {
+      setShowSentence(false);
+    }, delay);
+  };
+  const browserFallback = () => {
+    if (!("speechSynthesis" in window)) return;
+
+    const utter = new SpeechSynthesisUtterance(exerciseSentence);
+    utter.lang = "ar-SA";
+    utter.rate = 0.85;
+
+    utter.onstart = hideSentenceAfterDelay;
+    utter.onend = () => setIsSpeaking(false);
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  };
   const speakSentence = async () => {
-    if (!exercise?.correctSentence) return;
+    if (!exerciseSentence) return;
 
     setIsSpeaking(true);
 
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`${API}/api/pronunciation/generate-speech`, {
+      const res = await fetch(`${API}/api/spelling/generate-speech`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ text: exercise.correctSentence }),
+        body: JSON.stringify({ text: exerciseSentence })
       });
 
       if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`TTS failed: ${res.status} - ${txt}`);
+        browserFallback();
+        return;
       }
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
 
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      audioRef.current = new Audio(url);
+      audioRef.current.onended = () => setIsSpeaking(false);
+      audioRef.current.play();
 
-      const audio = new Audio(url);
-      audioRef.current = audio;
-
-      audio.onended = () => setIsSpeaking(false);
-      audio.onerror = () => setIsSpeaking(false);
-
-      await audio.play();
+      hideSentenceAfterDelay();
     } catch (err) {
-      console.error(err);
-      setIsSpeaking(false);
-      alert("❌ تعذر تشغيل الصوت (TTS)");
+      console.error("TTS error:", err);
+      browserFallback();
     }
   };
 
@@ -156,7 +177,7 @@ const PronunciationExercise = () => {
       const res = await fetch(`${API}/api/pronunciation/check`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
-        body: form,
+        body: form
       });
 
       if (!res.ok) {
@@ -205,7 +226,7 @@ const PronunciationExercise = () => {
                 onClick={speakSentence}
                 disabled={isSpeaking}
               >
-                {isSpeaking ? "🔊 جاري النطق..." : "▶️ استمع"}
+                {isSpeaking ? "🔊 جاري القراءة..." : "استمع 🎧▶️"}
               </button>
 
               {!recording ? (
