@@ -35,7 +35,7 @@ const PronunciationExercise = () => {
       const data = await res.json();
 
       if (data.sentence) {
-        setExercise({ correctSentence: data.sentence });
+        setExercise({ correctSentence: data.exercise });
         setResult(null);
         setAudioBlob(null);
       }
