@@ -31,7 +31,7 @@ const PronunciationExercise = () => {
   const generateSentence = async () => {
     const token = localStorage.getItem("token");
     const res = await fetch(
-      `${process.env.REACT_APP_API_URL}/api/spelling/exercise/${level}`,
+      `${process.env.REACT_APP_API_URL}/api/pronunciation/exercise/${level}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const data = await res.json();
@@ -143,9 +143,8 @@ const PronunciationExercise = () => {
 
       <div className="spelling-container">
         <h1 className="spelling-title">🎤 تمارين النطق</h1>
-
         <button className="new-text-btn" onClick={generateSentence}>
-          🔁 تمرين جديد
+          🎯 عرض جملة جديدة
         </button>
 
         {exercise && (
