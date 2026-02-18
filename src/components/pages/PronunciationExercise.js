@@ -124,7 +124,7 @@ const PronunciationExercise = () => {
       }
       window.speechSynthesis?.cancel();
 
-      const res = await fetch(`${API}/api/spelling/generate-speech`, {
+      const res = await fetch(`${API}/api/pronunciation/generate-speech`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
