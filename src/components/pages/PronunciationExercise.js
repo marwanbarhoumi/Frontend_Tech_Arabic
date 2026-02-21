@@ -272,21 +272,55 @@ const PronunciationExercise = () => {
           </div>
         )}
 
-        {result && (
-          <div className="result-section">
-            <div className="score-card">
-              <h3>نتيجة النطق</h3>
-              <div className="score-circle">
-                <span className="score-value">{result.score}%</span>
-              </div>
-              {result.recognizedText && (
-                <p className="feedback">
-                  📝 النص المفهوم: {result.recognizedText}
-                </p>
-              )}
+       {result && (
+  <div className="result-section">
+    <div className="score-card">
+      <h3>نتيجة النطق</h3>
+
+      <div className="score-circle">
+        <span className="score-value">{result.score}%</span>
+      </div>
+
+      <p className="feedback">{result.feedback}</p>
+    </div>
+
+    <div className="comparison">
+      <div className="text-box">
+        <h4>📄 النص الأصلي:</h4>
+        <div className="original-text">
+          {result.targetSentence || exercise?.correctSentence}
+        </div>
+      </div>
+
+      <div className="text-box">
+        <h4>📝 النص المفهوم:</h4>
+        <div className="corrected-text">
+          {result.recognizedText || "—"}
+        </div>
+      </div>
+    </div>
+
+    {result?.mistakes?.length > 0 && (
+      <div className="mistakes-details">
+        <h4>🔍 كلمات تحتاج تحسين:</h4>
+
+        <div className="mistakes-list">
+          {result.mistakes.map((m, index) => (
+            <div key={index} className="mistake-item">
+              <span className="mistake-original">{m.word}</span>
+              <span className="arrow">→</span>
+              <span className="mistake-corrected">{m.tip}</span>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
+      </div>
+    )}
+
+    <button className="new-text-btn" onClick={generateSentence}>
+      ✨ تمرين جديد
+    </button>
+  </div>
+)}
       </div>
 
       <Footer />
