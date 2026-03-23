@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import "../styles/SpellingCorrection.css";
+import "./styles/SpellingCorrection.css";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -47,6 +47,16 @@ const PronunciationExercise = () => {
     try {
       clearTimer();
       setShowSentence(true);
+      setRecording(false);
+      setAudioBlob(null);
+      setResult(null);
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      window.speechSynthesis?.cancel();
 
       const token = localStorage.getItem("token");
 
@@ -58,8 +68,6 @@ const PronunciationExercise = () => {
 
       if (data.success) {
         setExercise(data.exercise);
-        setResult(null);
-        setAudioBlob(null);
       }
     } catch (err) {
       console.error("Exercise error:", err);
@@ -127,16 +135,12 @@ const PronunciationExercise = () => {
 
       await audio.play();
       hideSentenceAfterDelay();
-
     } catch (err) {
       console.error("TTS error:", err);
       setIsSpeaking(false);
 
-      // fallback browser
       if ("speechSynthesis" in window) {
-        const utter = new SpeechSynthesisUtterance(
-          exercise.correctSentence
-        );
+        const utter = new SpeechSynthesisUtterance(exercise.correctSentence);
         utter.lang = "ar-SA";
         utter.rate = 0.85;
         utter.onstart = hideSentenceAfterDelay;
@@ -156,18 +160,17 @@ const PronunciationExercise = () => {
       const recorder = new MediaRecorder(stream);
       const chunks = [];
 
-      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.ondataavailable = (e) => chunks.push(e.data);
 
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: "audio/webm" });
         setAudioBlob(blob);
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach((t) => t.stop());
       };
 
       recorder.start();
       recorderRef.current = recorder;
       setRecording(true);
-
     } catch (err) {
       console.error("Recording error:", err);
       alert("❌ فشل تشغيل الميكروفون");
@@ -203,8 +206,9 @@ const PronunciationExercise = () => {
 
       const data = await res.json();
 
-      if (data.success) setResult(data);
-
+      if (data.success) {
+        setResult(data);
+      }
     } catch (err) {
       console.error("Submit error:", err);
     }
@@ -226,7 +230,8 @@ const PronunciationExercise = () => {
           🎯 عرض جملة جديدة
         </button>
 
-        {exercise && (
+        {/* تظهر فقط قبل عرض النتيجة */}
+        {exercise && !result && (
           <div className="correction-section">
             <div className="exercise-box">
               {showSentence ? (
@@ -272,55 +277,56 @@ const PronunciationExercise = () => {
           </div>
         )}
 
-       {result && (
-  <div className="result-section">
-    <div className="score-card">
-      <h3>نتيجة النطق</h3>
+        {/* تظهر بعد تأكيد النطق فقط */}
+        {result && (
+          <div className="result-section">
+            <div className="score-card">
+              <h3>نتيجة النطق</h3>
 
-      <div className="score-circle">
-        <span className="score-value">{result.score}%</span>
-      </div>
+              <div className="score-circle">
+                <span className="score-value">{result.score}%</span>
+              </div>
 
-      <p className="feedback">{result.feedback}</p>
-    </div>
-
-    <div className="comparison">
-      <div className="text-box">
-        <h4>📄 النص الأصلي:</h4>
-        <div className="original-text">
-          {result.targetSentence || exercise?.correctSentence}
-        </div>
-      </div>
-
-      <div className="text-box">
-        <h4>📝 النص المفهوم:</h4>
-        <div className="corrected-text">
-          {result.recognizedText || "—"}
-        </div>
-      </div>
-    </div>
-
-    {result?.mistakes?.length > 0 && (
-      <div className="mistakes-details">
-        <h4>🔍 كلمات تحتاج تحسين:</h4>
-
-        <div className="mistakes-list">
-          {result.mistakes.map((m, index) => (
-            <div key={index} className="mistake-item">
-              <span className="mistake-original">{m.word}</span>
-              <span className="arrow">→</span>
-              <span className="mistake-corrected">{m.tip}</span>
+              <p className="feedback">{result.feedback}</p>
             </div>
-          ))}
-        </div>
-      </div>
-    )}
 
-    <button className="new-text-btn" onClick={generateSentence}>
-      ✨ تمرين جديد
-    </button>
-  </div>
-)}
+            <div className="comparison">
+              <div className="text-box">
+                <h4>📄 النص الأصلي:</h4>
+                <div className="original-text">
+                  {result.targetSentence || exercise?.correctSentence}
+                </div>
+              </div>
+
+              <div className="text-box">
+                <h4>📝 النص المفهوم:</h4>
+                <div className="corrected-text">
+                  {result.recognizedText || "—"}
+                </div>
+              </div>
+            </div>
+
+            {result?.mistakes?.length > 0 && (
+              <div className="mistakes-details">
+                <h4>🔍 كلمات تحتاج تحسين:</h4>
+
+                <div className="mistakes-list">
+                  {result.mistakes.map((m, index) => (
+                    <div key={index} className="mistake-item">
+                      <span className="mistake-original">{m.word}</span>
+                      <span className="arrow">→</span>
+                      <span className="mistake-corrected">{m.tip}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button className="new-text-btn" onClick={generateSentence}>
+              ✨ تمرين جديد
+            </button>
+          </div>
+        )}
       </div>
 
       <Footer />
