@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import "./styles/SpellingCorrection.css";
+import "../styles/SpellingCorrection.css";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
