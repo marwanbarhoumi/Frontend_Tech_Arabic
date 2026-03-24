@@ -6,6 +6,10 @@ import Footer from "./Footer";
 
 const API = process.env.REACT_APP_API_URL;
 
+const arabicFont = {
+  fontFamily: '"Noto Naskh Arabic", "Traditional Arabic", Arial, sans-serif'
+};
+
 const PronunciationExercise = () => {
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
@@ -22,9 +26,6 @@ const PronunciationExercise = () => {
   const audioRef = useRef(null);
   const hideSentenceTimeout = useRef(null);
 
-  /* ============================
-     CLEANUP
-  ============================ */
   const clearTimer = () => {
     if (hideSentenceTimeout.current) {
       clearTimeout(hideSentenceTimeout.current);
@@ -40,9 +41,6 @@ const PronunciationExercise = () => {
     };
   }, []);
 
-  /* ============================
-     GET EXERCISE
-  ============================ */
   const generateSentence = async () => {
     try {
       clearTimer();
@@ -79,9 +77,6 @@ const PronunciationExercise = () => {
     // eslint-disable-next-line
   }, [level]);
 
-  /* ============================
-     HIDE SENTENCE TIMER
-  ============================ */
   const hideSentenceAfterDelay = () => {
     clearTimer();
 
@@ -95,9 +90,6 @@ const PronunciationExercise = () => {
     }, delay);
   };
 
-  /* ============================
-     TTS
-  ============================ */
   const speakSentence = async () => {
     if (!exercise?.correctSentence) return;
 
@@ -150,9 +142,6 @@ const PronunciationExercise = () => {
     }
   };
 
-  /* ============================
-     RECORD
-  ============================ */
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -182,9 +171,6 @@ const PronunciationExercise = () => {
     setRecording(false);
   };
 
-  /* ============================
-     SUBMIT
-  ============================ */
   const submitPronunciation = async () => {
     if (!audioBlob) return alert("🎤 سجّل صوتك أولاً");
     if (!exercise?.id) return;
@@ -216,30 +202,26 @@ const PronunciationExercise = () => {
     setLoading(false);
   };
 
-  /* ============================
-     UI
-  ============================ */
   return (
-    <div className="spelling-page">
+    <div className="spelling-page" style={arabicFont}>
       <Navbar />
 
-      <div className="spelling-container">
-        <h1 className="spelling-title">🎤 تمارين النطق</h1>
+      <div className="spelling-container" style={arabicFont}>
+        <h1 className="spelling-title" style={arabicFont}>🎤 تمارين النطق</h1>
 
-        <button className="new-text-btn" onClick={generateSentence}>
+        <button className="new-text-btn" onClick={generateSentence} style={arabicFont}>
           🎯 عرض جملة جديدة
         </button>
 
-        {/* تظهر فقط قبل عرض النتيجة */}
         {exercise && !result && (
-          <div className="correction-section">
+          <div className="correction-section" style={arabicFont}>
             <div className="exercise-box">
               {showSentence ? (
-                <p className="exercise-sentence">
+                <p className="exercise-sentence" style={arabicFont}>
                   {exercise.correctSentence}
                 </p>
               ) : (
-                <p className="exercise-sentence-hidden">
+                <p className="exercise-sentence-hidden" style={arabicFont}>
                   🎧 استمعت للجملة، سجّل صوتك الآن
                 </p>
               )}
@@ -250,16 +232,17 @@ const PronunciationExercise = () => {
                 className="speak-btn"
                 onClick={speakSentence}
                 disabled={isSpeaking}
+                style={arabicFont}
               >
                 {isSpeaking ? "🔊 جاري القراءة..." : "استمع 🎧▶️"}
               </button>
 
               {!recording ? (
-                <button className="correct-btn" onClick={startRecording}>
+                <button className="correct-btn" onClick={startRecording} style={arabicFont}>
                   🎤 سجّل
                 </button>
               ) : (
-                <button className="stop-btn" onClick={stopRecording}>
+                <button className="stop-btn" onClick={stopRecording} style={arabicFont}>
                   ⏹️ إيقاف التسجيل
                 </button>
               )}
@@ -270,6 +253,7 @@ const PronunciationExercise = () => {
                 className="correct-btn"
                 onClick={submitPronunciation}
                 disabled={loading}
+                style={arabicFont}
               >
                 {loading ? "جاري التقييم..." : "✅ تأكيد النطق"}
               </button>
@@ -277,52 +261,51 @@ const PronunciationExercise = () => {
           </div>
         )}
 
-        {/* تظهر بعد تأكيد النطق فقط */}
         {result && (
-          <div className="result-section">
+          <div className="result-section" style={arabicFont}>
             <div className="score-card">
-              <h3>نتيجة النطق</h3>
+              <h3 style={arabicFont}>نتيجة النطق</h3>
 
               <div className="score-circle">
                 <span className="score-value">{result.score}%</span>
               </div>
 
-              <p className="feedback">{result.feedback}</p>
+              <p className="feedback" style={arabicFont}>{result.feedback}</p>
             </div>
 
             <div className="comparison">
               <div className="text-box">
-                <h4>📄 النص الأصلي:</h4>
-                <div className="original-text">
+                <h4 style={arabicFont}>📄 النص الأصلي:</h4>
+                <div className="original-text" style={arabicFont}>
                   {result.targetSentence || exercise?.correctSentence}
                 </div>
               </div>
 
               <div className="text-box">
-                <h4>📝 النص المفهوم:</h4>
-                <div className="corrected-text">
+                <h4 style={arabicFont}>📝 النص المفهوم:</h4>
+                <div className="corrected-text" style={arabicFont}>
                   {result.recognizedText || "—"}
                 </div>
               </div>
             </div>
 
             {result?.mistakes?.length > 0 && (
-              <div className="mistakes-details">
-                <h4>🔍 كلمات تحتاج تحسين:</h4>
+              <div className="mistakes-details" style={arabicFont}>
+                <h4 style={arabicFont}>🔍 كلمات تحتاج تحسين:</h4>
 
                 <div className="mistakes-list">
                   {result.mistakes.map((m, index) => (
-                    <div key={index} className="mistake-item">
-                      <span className="mistake-original">{m.word}</span>
-                      <span className="arrow">→</span>
-                      <span className="mistake-corrected">{m.tip}</span>
+                    <div key={index} className="mistake-item" style={arabicFont}>
+                      <span className="mistake-original" style={arabicFont}>{m.word}</span>
+                      <span className="arrow" style={arabicFont}>→</span>
+                      <span className="mistake-corrected" style={arabicFont}>{m.tip}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <button className="new-text-btn" onClick={generateSentence}>
+            <button className="new-text-btn" onClick={generateSentence} style={arabicFont}>
               ✨ تمرين جديد
             </button>
           </div>
