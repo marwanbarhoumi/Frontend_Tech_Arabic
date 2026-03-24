@@ -96,7 +96,7 @@ const SignIn = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
               >
-                👁
+                {showPassword ? "🙈" : "👁"}
               </button>
 
               <input
