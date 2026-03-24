@@ -203,6 +203,34 @@
   font-size: 0.9rem;
   color: #111;
 }
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 50px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.toggle-password:hover {
+  color: #1e90ff;
+}
 
 .social-btn:hover {
   background: rgba(255, 255, 255, 0.8);
@@ -243,32 +271,5 @@
   cursor: not-allowed;
   transform: none !important;
 }
-.password-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
 
-.password-wrapper input {
-  width: 100%;
-  padding-right: 50px;
-}
-
-.toggle-password {
-  position: absolute;
-  right: 14px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 20px;
-  color: #666;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.toggle-password:hover {
-  color: #1e90ff;
-}
 }
