@@ -90,6 +90,15 @@ const SignIn = () => {
             <label htmlFor="password">كلمة المرور</label>
 
             <div className="password-wrapper">
+              <button
+                type="button"
+                className="toggle-password"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              >
+                👁
+              </button>
+
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -99,17 +108,6 @@ const SignIn = () => {
                 onChange={handleChange}
                 required
               />
-
-              <button
-                type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={
-                  showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"
-                }
-              >
-                {showPassword ? "🙈" : "👁"}
-              </button>
             </div>
           </div>
 
