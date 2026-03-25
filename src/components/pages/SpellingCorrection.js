@@ -5,10 +5,10 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const arabicKeys = [
-  ["ض","ص","ث","ق","ف","غ","ع","ه","خ","ح","ج","د"],
-  ["ش","س","ي","ب","ل","ا","ت","ن","م","ك","ط"],
-  ["ئ","ء","ؤ","ر","لا","ى","ة","و","ز","ظ"],
-  ["أ","إ","آ","َ","ً","ُ","ٌ","ِ","ٍ","ْ","ّ"]
+  ["ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "د"],
+  ["ش", "س", "ي", "ب", "ل", "ا", "ت", "ن", "م", "ك", "ط"],
+  ["ئ", "ء", "ؤ", "ر", "لا", "ى", "ة", "و", "ز", "ظ"],
+  ["أ", "إ", "آ", "َ", "ً", "ُ", "ٌ", "ِ", "ٍ", "ْ", "ّ"]
 ];
 
 const SpellingCorrection = () => {
@@ -133,7 +133,7 @@ const SpellingCorrection = () => {
         URL.revokeObjectURL(url);
       };
 
-      audio.play();
+      await audio.play();
       hideSentenceAfterDelay();
     } catch {
       browserFallback();
@@ -170,14 +170,18 @@ const SpellingCorrection = () => {
     console.log("TEXT =", text);
     console.log("EXERCISE ID =", currentExerciseId);
 
-    if (!exerciseSentence)
+    if (!exerciseSentence) {
       return alert("اضغط على 'عرض جملة جديدة' لبدء التمرين");
-    if (!text.trim()) return alert("⚠️ الرجاء كتابة الجملة أولاً");
+    }
+
+    if (!text.trim()) {
+      return alert("⚠️ الرجاء كتابة الجملة أولاً");
+    }
 
     if (text.trim() === exerciseSentence.trim()) {
       setResult({
         score: 100,
-        feedback: "ممتاز!  👏 الكتابة صحيحة تماماً",
+        feedback: "ممتاز! 👏 الكتابة صحيحة تماماً",
         originalText: text,
         correctedText: exerciseSentence,
         targetSentence: exerciseSentence,
@@ -203,14 +207,20 @@ const SpellingCorrection = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ text: text, exerciseId: currentExerciseId })
+          body: JSON.stringify({
+            text: text,
+            exerciseId: currentExerciseId
+          })
         }
       );
 
       const data = await response.json();
 
-      if (data.success) setResult({ ...data, mistakes: data.mistakes || [] });
-      else alert("❌ حدث خطأ في التصحيح: " + data.message);
+      if (data.success) {
+        setResult({ ...data, mistakes: data.mistakes || [] });
+      } else {
+        alert("❌ حدث خطأ في التصحيح: " + data.message);
+      }
     } catch (error) {
       console.error("Correction error:", error);
       alert("❌ تعذر الاتصال بالخادم");
@@ -224,11 +234,30 @@ const SpellingCorrection = () => {
     setResult(null);
   };
 
-  const handleKeyClick = (key) => setText((prev) => prev + key);
+  const handleKeyClick = (key) => {
+    setText((prev) => prev + key);
+  };
+
+  const handleBackspace = () => {
+    setText((prev) => prev.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    setText("");
+  };
+
+  const handleSpace = () => {
+    setText((prev) => prev + " ");
+  };
+
+  const handleNewLine = () => {
+    setText((prev) => prev + "\n");
+  };
 
   return (
     <div className="spelling-page">
       <Navbar />
+
       <div className="spelling-container">
         <h1 className="spelling-title">✍️ تصحيح الإملاء الآلي</h1>
 
@@ -295,7 +324,9 @@ const SpellingCorrection = () => {
                     onClick={speakSentence}
                     disabled={isSpeaking}
                   >
-                    {isSpeaking ? "🔊 جاري إعادة القراءة..." : "🔁 أعد الاستماع"}
+                    {isSpeaking
+                      ? "🔊 جاري إعادة القراءة..."
+                      : "🔁 أعد الاستماع"}
                   </button>
 
                   <button
@@ -326,6 +357,7 @@ const SpellingCorrection = () => {
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows="6"
+            dir="rtl"
           />
 
           <div className="buttons-row">
@@ -345,64 +377,68 @@ const SpellingCorrection = () => {
             </button>
           </div>
 
-         {showKeyboard && (
-  <div className="arabic-keyboard">
+          {showKeyboard && (
+            <div className="arabic-keyboard">
+              {arabicKeys.map((row, i) => (
+                <div key={i} className="keyboard-row">
+                  {row.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className="key-btn"
+                      onClick={() => handleKeyClick(key)}
+                    >
+                      {key}
+                    </button>
+                  ))}
+                </div>
+              ))}
 
-    {arabicKeys.map((row, i) => (
-      <div key={i} className="keyboard-row">
-        {row.map((key) => (
-          <button
-            key={key}
-            className="key-btn"
-            onClick={() => setText((prev) => prev + key)}
-          >
-            {key}
-          </button>
-        ))}
-      </div>
-    ))}
+              <div className="keyboard-row">
+                <button
+                  type="button"
+                  className="key-btn space-btn"
+                  onClick={handleSpace}
+                >
+                  ␣ مسافة
+                </button>
 
-    {/* صف التحكم */}
-    <div className="keyboard-row">
-      <button
-        className="key-btn space-btn"
-        onClick={() => setText((prev) => prev + " ")}
-      >
-        ␣ مسافة
-      </button>
+                <button
+                  type="button"
+                  className="key-btn"
+                  onClick={handleBackspace}
+                >
+                  ⌫ حذف
+                </button>
 
-      <button
-        className="key-btn"
-        onClick={() => setText((prev) => prev.slice(0, -1))}
-      >
-        ⌫ حذف
-      </button>
+                <button
+                  type="button"
+                  className="key-btn"
+                  onClick={handleClear}
+                >
+                  🗑 مسح
+                </button>
 
-      <button
-        className="key-btn"
-        onClick={() => setText("")}
-      >
-        🗑 مسح
-      </button>
-
-      <button
-        className="key-btn"
-        onClick={() => setText((prev) => prev + "\n")}
-      >
-        ↵ سطر
-      </button>
-    </div>
-
-  </div>
-)}
+                <button
+                  type="button"
+                  className="key-btn"
+                  onClick={handleNewLine}
+                >
+                  ↵ سطر
+                </button>
+              </div>
+            </div>
+          )}
 
           {result && (
             <div className="result-section">
               <div className="score-card">
                 <h3>نتيجة التصحيح</h3>
+
                 <div className="score-circle">
                   <span className="score-value">{result.score}%</span>
                 </div>
+
                 <p className="feedback">{result.feedback}</p>
               </div>
 
@@ -421,6 +457,7 @@ const SpellingCorrection = () => {
               {result?.mistakes?.length > 0 && (
                 <div className="mistakes-details">
                   <h4>🔍 الأخطاء التي تم تصحيحها:</h4>
+
                   <div className="mistakes-list">
                     {result.mistakes.map((mistake, index) => (
                       <div key={index} className="mistake-item">
@@ -431,8 +468,12 @@ const SpellingCorrection = () => {
                         <span className="mistake-corrected">
                           {mistake.corrected}
                         </span>
-                        <span className="mistake-type">({mistake.type})</span>
-                        <div className="explanation">{mistake.explanation}</div>
+                        <span className="mistake-type">
+                          ({mistake.type})
+                        </span>
+                        <div className="explanation">
+                          {mistake.explanation}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -446,6 +487,7 @@ const SpellingCorrection = () => {
           )}
         </div>
       </div>
+
       <Footer />
     </div>
   );
