@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import "./styles/SpellingCorrection.css";
+import "../styles/SpellingCorrection.css";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -24,11 +24,8 @@ const SpellingCorrection = () => {
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
-  // ✅ التحكم في إظهار/إخفاء bloc متاع الجملة
+  // ✅ nouveau state باش نتحكم في ظهور partie متاع الجملة
   const [showExerciseBox, setShowExerciseBox] = useState(true);
-
-  // ✅ التحكم في إظهار/إخفاء bloc متاع الكتابة والأزرار
-  const [showCorrectionSection, setShowCorrectionSection] = useState(true);
 
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
@@ -53,11 +50,7 @@ const SpellingCorrection = () => {
       setShowResult(false);
       setAudioTime(0);
       setHasPlayedOnce(false);
-
-      // ✅ وقت نجيب جملة جديدة يرجعو يظهروا
-      setShowExerciseBox(true);
-      setShowCorrectionSection(true);
-      setShowKeyboard(false);
+      setShowExerciseBox(true); // ✅ ترجع تظهر وقت تعمل جملة جديدة
 
       if (audioRef.current) {
         audioRef.current.pause();
@@ -191,10 +184,8 @@ const SpellingCorrection = () => {
       return alert("⚠️ الرجاء كتابة الجملة أولاً");
     }
 
-    // ✅ أول ما يضغط صحح الإملاء يختفيو الزوز parties
+    // ✅ أول ما يضغط على صحح الإملاء تختفي partie الجملة
     setShowExerciseBox(false);
-    setShowCorrectionSection(false);
-    setShowKeyboard(false);
 
     if (text.trim() === exerciseSentence.trim()) {
       setResult({
@@ -240,18 +231,10 @@ const SpellingCorrection = () => {
         setShowResult(true);
       } else {
         alert("❌ حدث خطأ في التصحيح: " + data.message);
-
-        // ✅ إذا صار error نرجعهم يظهروا
-        setShowExerciseBox(true);
-        setShowCorrectionSection(true);
       }
     } catch (error) {
       console.error("Correction error:", error);
       alert("❌ تعذر الاتصال بالخادم");
-
-      // ✅ إذا صار error نرجعهم يظهروا
-      setShowExerciseBox(true);
-      setShowCorrectionSection(true);
     } finally {
       setLoading(false);
     }
@@ -261,9 +244,6 @@ const SpellingCorrection = () => {
     setText("");
     setResult(null);
     setShowResult(false);
-
-    // ✅ إذا حبيت نص جديد بعد النتيجة
-    setShowCorrectionSection(true);
   };
 
   const handleKeyClick = (key) => {
@@ -297,6 +277,7 @@ const SpellingCorrection = () => {
           🎯 عرض جملة جديدة
         </button>
 
+        {/* ✅ تظهر فقط إذا showExerciseBox = true */}
         {exerciseSentence && showExerciseBox && (
           <div className="exercise-box">
             {showSentence ? (
@@ -317,8 +298,8 @@ const SpellingCorrection = () => {
                     {isSpeaking
                       ? "🔊 جاري القراءة..."
                       : hasPlayedOnce
-                      ? "🔁 أعد الاستماع"
-                      : "استمع 🎧▶️"}
+                        ? "🔁 أعد الاستماع"
+                        : "استمع 🎧▶️"}
                   </button>
 
                   <button
@@ -381,141 +362,135 @@ const SpellingCorrection = () => {
           </div>
         )}
 
-        {showCorrectionSection && (
-          <div className="correction-section">
-            <label className="input-label">اكتب الجملة هنا:</label>
+        <div className="correction-section">
+          <label className="input-label">اكتب الجملة هنا:</label>
 
-            <textarea
-              className="text-input"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows="6"
-              dir="rtl"
-            />
+          <textarea
+            className="text-input"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows="6"
+            dir="rtl"
+          />
 
-            <div className="buttons-row">
-              <button
-                className="correct-btn"
-                onClick={handleCorrect}
-                disabled={loading}
-              >
-                {loading ? "جاري التصحيح..." : "📝 صحح الإملاء"}
-              </button>
+          <div className="buttons-row">
+            <button
+              className="correct-btn"
+              onClick={handleCorrect}
+              disabled={loading}
+            >
+              {loading ? "جاري التصحيح..." : "📝 صحح الإملاء"}
+            </button>
 
-              <button
-                className="keyboard-btn"
-                onClick={() => setShowKeyboard(!showKeyboard)}
-              >
-                ⌨️ لوحة المفاتيح
-              </button>
-            </div>
-
-            {showKeyboard && (
-              <div className="arabic-keyboard">
-                {arabicKeys.map((row, i) => (
-                  <div key={i} className="keyboard-row">
-                    {row.map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className="key-btn"
-                        onClick={() => handleKeyClick(key)}
-                      >
-                        {key}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-
-                <div className="keyboard-row">
-                  <button
-                    type="button"
-                    className="key-btn space-btn"
-                    onClick={handleSpace}
-                  >
-                    ␣ مسافة
-                  </button>
-
-                  <button
-                    type="button"
-                    className="key-btn"
-                    onClick={handleBackspace}
-                  >
-                    ⌫ حذف
-                  </button>
-
-                  <button
-                    type="button"
-                    className="key-btn"
-                    onClick={handleClear}
-                  >
-                    🗑 مسح
-                  </button>
-
-                  <button
-                    type="button"
-                    className="key-btn"
-                    onClick={handleNewLine}
-                  >
-                    ↵ سطر
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {showResult && result && (
-          <div className="result-section">
-            <div className="score-card">
-              <h3>نتيجة التصحيح</h3>
-
-              <div className="score-circle">
-                <span className="score-value">{result.score}%</span>
-              </div>
-
-              <p className="feedback">{result.feedback}</p>
-            </div>
-
-            <div className="comparison">
-              <div className="text-box">
-                <h4>📄 النص الأصلي:</h4>
-                <div className="original-text">{result.originalText}</div>
-              </div>
-
-              <div className="text-box">
-                <h4>✅ النص المصحح:</h4>
-                <div className="corrected-text">{result.correctedText}</div>
-              </div>
-            </div>
-
-            {result?.mistakes?.length > 0 && (
-              <div className="mistakes-details">
-                <h4>🔍 الأخطاء التي تم تصحيحها:</h4>
-
-                <div className="mistakes-list">
-                  {result.mistakes.map((mistake, index) => (
-                    <div key={index} className="mistake-item">
-                      <span className="mistake-original">
-                        {mistake.original}
-                      </span>
-                      <span className="arrow">→</span>
-                      <span className="mistake-corrected">
-                        {mistake.corrected}
-                      </span>
-                      <span className="mistake-type">({mistake.type})</span>
-                      <div className="explanation">{mistake.explanation}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button className="new-text-btn" onClick={handleNewText}>
-              ✨ نص جديد
+            <button
+              className="keyboard-btn"
+              onClick={() => setShowKeyboard(!showKeyboard)}
+            >
+              ⌨️ لوحة المفاتيح
             </button>
           </div>
-        )}
+
+          {showKeyboard && (
+            <div className="arabic-keyboard">
+              {arabicKeys.map((row, i) => (
+                <div key={i} className="keyboard-row">
+                  {row.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className="key-btn"
+                      onClick={() => handleKeyClick(key)}
+                    >
+                      {key}
+                    </button>
+                  ))}
+                </div>
+              ))}
+
+              <div className="keyboard-row">
+                <button
+                  type="button"
+                  className="key-btn space-btn"
+                  onClick={handleSpace}
+                >
+                  ␣ مسافة
+                </button>
+
+                <button
+                  type="button"
+                  className="key-btn"
+                  onClick={handleBackspace}
+                >
+                  ⌫ حذف
+                </button>
+
+                <button type="button" className="key-btn" onClick={handleClear}>
+                  🗑 مسح
+                </button>
+
+                <button
+                  type="button"
+                  className="key-btn"
+                  onClick={handleNewLine}
+                >
+                  ↵ سطر
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showResult && result && (
+            <div className="result-section">
+              <div className="score-card">
+                <h3>نتيجة التصحيح</h3>
+
+                <div className="score-circle">
+                  <span className="score-value">{result.score}%</span>
+                </div>
+
+                <p className="feedback">{result.feedback}</p>
+              </div>
+
+              <div className="comparison">
+                <div className="text-box">
+                  <h4>📄 النص الأصلي:</h4>
+                  <div className="original-text">{result.originalText}</div>
+                </div>
+
+                <div className="text-box">
+                  <h4>✅ النص المصحح:</h4>
+                  <div className="corrected-text">{result.correctedText}</div>
+                </div>
+              </div>
+
+              {result?.mistakes?.length > 0 && (
+                <div className="mistakes-details">
+                  <h4>🔍 الأخطاء التي تم تصحيحها:</h4>
+
+                  <div className="mistakes-list">
+                    {result.mistakes.map((mistake, index) => (
+                      <div key={index} className="mistake-item">
+                        <span className="mistake-original">
+                          {mistake.original}
+                        </span>
+                        <span className="arrow">→</span>
+                        <span className="mistake-corrected">
+                          {mistake.corrected}
+                        </span>
+                        <span className="mistake-type">({mistake.type})</span>
+                        <div className="explanation">{mistake.explanation}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button className="new-text-btn" onClick={handleNewText}>
+                ✨ نص جديد
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Footer />
