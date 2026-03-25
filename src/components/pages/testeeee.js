@@ -22,7 +22,6 @@ const SpellingCorrection = () => {
   const [currentExerciseId, setCurrentExerciseId] = useState(null);
   const [audioTime, setAudioTime] = useState(0);
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
-  const [showResult, setShowResult] = useState(false);
 
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
@@ -44,7 +43,6 @@ const SpellingCorrection = () => {
       setText("");
       setShowSentence(true);
       setResult(null);
-      setShowResult(false);
       setAudioTime(0);
       setHasPlayedOnce(false);
 
@@ -190,7 +188,6 @@ const SpellingCorrection = () => {
         mistakes: [],
         isPerfect: true
       });
-      setShowResult(true); // ✅
       return;
     }
 
@@ -221,7 +218,6 @@ const SpellingCorrection = () => {
 
       if (data.success) {
         setResult({ ...data, mistakes: data.mistakes || [] });
-        setShowResult(true);
       } else {
         alert("❌ حدث خطأ في التصحيح: " + data.message);
       }
@@ -236,7 +232,6 @@ const SpellingCorrection = () => {
   const handleNewText = () => {
     setText("");
     setResult(null);
-    setShowResult(false);
   };
 
   const handleKeyClick = (key) => {
@@ -290,8 +285,8 @@ const SpellingCorrection = () => {
                     {isSpeaking
                       ? "🔊 جاري القراءة..."
                       : hasPlayedOnce
-                        ? "🔁 أعد الاستماع"
-                        : "استمع 🎧▶️"}
+                      ? "🔁 أعد الاستماع"
+                      : "استمع 🎧▶️"}
                   </button>
 
                   <button
@@ -416,7 +411,11 @@ const SpellingCorrection = () => {
                   ⌫ حذف
                 </button>
 
-                <button type="button" className="key-btn" onClick={handleClear}>
+                <button
+                  type="button"
+                  className="key-btn"
+                  onClick={handleClear}
+                >
                   🗑 مسح
                 </button>
 
@@ -431,7 +430,7 @@ const SpellingCorrection = () => {
             </div>
           )}
 
-          {showResult && result && (
+          {result && (
             <div className="result-section">
               <div className="score-card">
                 <h3>نتيجة التصحيح</h3>
@@ -469,8 +468,12 @@ const SpellingCorrection = () => {
                         <span className="mistake-corrected">
                           {mistake.corrected}
                         </span>
-                        <span className="mistake-type">({mistake.type})</span>
-                        <div className="explanation">{mistake.explanation}</div>
+                        <span className="mistake-type">
+                          ({mistake.type})
+                        </span>
+                        <div className="explanation">
+                          {mistake.explanation}
+                        </div>
                       </div>
                     ))}
                   </div>
