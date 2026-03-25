@@ -24,6 +24,9 @@ const SpellingCorrection = () => {
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
+  // ✅ nouveau state باش نتحكم في ظهور partie متاع الجملة
+  const [showExerciseBox, setShowExerciseBox] = useState(true);
+
   const [searchParams] = useSearchParams();
   const level = Number(searchParams.get("level")) || 1;
 
@@ -47,6 +50,7 @@ const SpellingCorrection = () => {
       setShowResult(false);
       setAudioTime(0);
       setHasPlayedOnce(false);
+      setShowExerciseBox(true); // ✅ ترجع تظهر وقت تعمل جملة جديدة
 
       if (audioRef.current) {
         audioRef.current.pause();
@@ -180,6 +184,9 @@ const SpellingCorrection = () => {
       return alert("⚠️ الرجاء كتابة الجملة أولاً");
     }
 
+    // ✅ أول ما يضغط على صحح الإملاء تختفي partie الجملة
+    setShowExerciseBox(false);
+
     if (text.trim() === exerciseSentence.trim()) {
       setResult({
         score: 100,
@@ -190,7 +197,7 @@ const SpellingCorrection = () => {
         mistakes: [],
         isPerfect: true
       });
-      setShowResult(true); // ✅
+      setShowResult(true);
       return;
     }
 
@@ -270,7 +277,8 @@ const SpellingCorrection = () => {
           🎯 عرض جملة جديدة
         </button>
 
-        {exerciseSentence && (
+        {/* ✅ تظهر فقط إذا showExerciseBox = true */}
+        {exerciseSentence && showExerciseBox && (
           <div className="exercise-box">
             {showSentence ? (
               <>
