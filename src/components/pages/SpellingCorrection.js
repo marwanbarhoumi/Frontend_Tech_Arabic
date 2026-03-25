@@ -5,9 +5,10 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const arabicKeys = [
-  ["ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "د"],
-  ["ش", "س", "ي", "ب", "ل", "ا", "ت", "ن", "م", "ك", "ط"],
-  ["ئ", "ء", "ؤ", "ر", "لا", "ى", "ة", "و", "ز", "ظ"]
+  ["ض","ص","ث","ق","ف","غ","ع","ه","خ","ح","ج","د"],
+  ["ش","س","ي","ب","ل","ا","ت","ن","م","ك","ط"],
+  ["ئ","ء","ؤ","ر","لا","ى","ة","و","ز","ظ"],
+  ["أ","إ","آ","َ","ً","ُ","ٌ","ِ","ٍ","ْ","ّ"]
 ];
 
 const SpellingCorrection = () => {
@@ -344,31 +345,56 @@ const SpellingCorrection = () => {
             </button>
           </div>
 
-          {showKeyboard && (
-            <div className="arabic-keyboard">
-              {arabicKeys.map((row, i) => (
-                <div key={i} className="keyboard-row">
-                  {row.map((key) => (
-                    <button
-                      key={key}
-                      className="key-btn"
-                      onClick={() => handleKeyClick(key)}
-                    >
-                      {key}
-                    </button>
-                  ))}
-                  {i === arabicKeys.length - 1 && (
-                    <button
-                      className="key-btn space-btn"
-                      onClick={() => handleKeyClick(" ")}
-                    >
-                      مسافة
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+         {showKeyboard && (
+  <div className="arabic-keyboard">
+
+    {arabicKeys.map((row, i) => (
+      <div key={i} className="keyboard-row">
+        {row.map((key) => (
+          <button
+            key={key}
+            className="key-btn"
+            onClick={() => setText((prev) => prev + key)}
+          >
+            {key}
+          </button>
+        ))}
+      </div>
+    ))}
+
+    {/* صف التحكم */}
+    <div className="keyboard-row">
+      <button
+        className="key-btn space-btn"
+        onClick={() => setText((prev) => prev + " ")}
+      >
+        ␣ مسافة
+      </button>
+
+      <button
+        className="key-btn"
+        onClick={() => setText((prev) => prev.slice(0, -1))}
+      >
+        ⌫ حذف
+      </button>
+
+      <button
+        className="key-btn"
+        onClick={() => setText("")}
+      >
+        🗑 مسح
+      </button>
+
+      <button
+        className="key-btn"
+        onClick={() => setText((prev) => prev + "\n")}
+      >
+        ↵ سطر
+      </button>
+    </div>
+
+  </div>
+)}
 
           {result && (
             <div className="result-section">
