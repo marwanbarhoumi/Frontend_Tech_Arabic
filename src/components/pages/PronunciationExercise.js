@@ -21,6 +21,7 @@ const PronunciationExercise = () => {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showSentence, setShowSentence] = useState(true);
+  const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
 
   const recorderRef = useRef(null);
   const audioRef = useRef(null);
@@ -36,7 +37,12 @@ const PronunciationExercise = () => {
   useEffect(() => {
     return () => {
       clearTimer();
-      if (audioRef.current) audioRef.current.pause();
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
       window.speechSynthesis?.cancel();
     };
   }, []);
@@ -48,6 +54,7 @@ const PronunciationExercise = () => {
       setRecording(false);
       setAudioBlob(null);
       setResult(null);
+      setHasPlayedOnce(false);
 
       if (audioRef.current) {
         audioRef.current.pause();
@@ -103,6 +110,8 @@ const PronunciationExercise = () => {
         audioRef.current = null;
       }
 
+      window.speechSynthesis?.cancel();
+
       const res = await fetch(`${API}/api/pronunciation/generate-speech`, {
         method: "POST",
         headers: {
@@ -122,6 +131,7 @@ const PronunciationExercise = () => {
 
       audio.onended = () => {
         setIsSpeaking(false);
+        setHasPlayedOnce(true);
         URL.revokeObjectURL(url);
       };
 
@@ -135,8 +145,14 @@ const PronunciationExercise = () => {
         const utter = new SpeechSynthesisUtterance(exercise.correctSentence);
         utter.lang = "ar-SA";
         utter.rate = 0.85;
+
         utter.onstart = hideSentenceAfterDelay;
-        utter.onend = () => setIsSpeaking(false);
+
+        utter.onend = () => {
+          setIsSpeaking(false);
+          setHasPlayedOnce(true);
+        };
+
         window.speechSynthesis.speak(utter);
       }
     }
@@ -234,7 +250,11 @@ const PronunciationExercise = () => {
                 disabled={isSpeaking}
                 style={arabicFont}
               >
-                {isSpeaking ? "🔊 جاري القراءة..." : "استمع 🎧▶️"}
+                {isSpeaking
+                  ? "🔊 جاري القراءة..."
+                  : hasPlayedOnce
+                  ? "إعادة الاستماع 🔁"
+                  : "استمع 🎧▶️"}
               </button>
 
               {!recording ? (
