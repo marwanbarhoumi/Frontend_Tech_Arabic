@@ -555,4 +555,22 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+.spelling-page,
+.spelling-container,
+.spelling-title,
+.exercise-sentence,
+.exercise-sentence-hidden,
+.speak-btn,
+.correct-btn,
+.stop-btn,
+.new-text-btn,
+.score-card,
+.feedback,
+.text-box,
+.original-text,
+.corrected-text,
+.mistakes-details,
+.mistake-item {
+  font-family: "Noto Naskh Arabic", "Traditional Arabic", Arial, sans-serif;
+}
 
